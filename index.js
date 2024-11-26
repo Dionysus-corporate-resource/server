@@ -4,8 +4,10 @@ import dotenv from "dotenv";
 import cors from "cors";
 //
 import { registerValidator, loginValidator } from "./validations/auth.js";
-import checkAuth from "./utils/checkAuth.js";
 import { auth } from "./controllers/user-controller.js";
+import { booking } from "./controllers/booking-controller.js";
+import { bookingValidator } from "./validations/booking.js";
+import { check } from "./utils/checkAuth.js";
 
 dotenv.config();
 // Загружаем переменные из .env
@@ -25,7 +27,12 @@ app.get("/", (req, res) => {
 
 app.post("/auth/register", registerValidator, auth.register);
 app.post("/auth/login", loginValidator, auth.login);
-app.get("/auth/me", checkAuth, auth.getMe);
+app.get("/auth/me", check.isAuth, auth.getMe);
+
+app.post("/booking", check.isManager, bookingValidator, booking.create);
+app.get("/booking", booking.getAll);
+app.get("/booking/:id", booking.getOne);
+app.delete("/booking/:id", check.isManager, booking.remove);
 
 // Запуск сервера
 const PORT = 3000;
