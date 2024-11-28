@@ -78,6 +78,54 @@ export const booking = {
       res.status(500).json({ message: "Не удалось получить booking" });
     }
   },
+  toggle: async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json(errors.array());
+    }
+
+    try {
+      const bookingId = req.params.id;
+
+      // Проверяем, существует ли документ
+      const existingBooking = await BookingModel.findById(bookingId);
+      if (!existingBooking) {
+        return res.status(404).json({ message: "Booking не найден" });
+      }
+
+      // Обновляем документ
+      const updatedBooking = await BookingModel.findByIdAndUpdate(
+        bookingId,
+        {
+          relevance: req.body.relevance,
+          cargoName: req.body.cargoName,
+          cargoAmount: req.body.cargoAmount,
+          loadType: req.body.loadType,
+          location: {
+            loadingLocation: req.body.location.loadingLocation,
+            unloadingLocation: req.body.location.unloadingLocation,
+            distance: req.body.location.distance,
+          },
+          terms: {
+            price: req.body.terms.price,
+            paymentMethod: req.body.terms.paymentMethod,
+            truckType: req.body.terms.truckType,
+          },
+          advance: {
+            percentage: req.body.advance.percentage,
+          },
+          additionalInfo: req.body.additionalInfo,
+          manager: req.userId,
+        },
+        { new: true }, // возвращает обновленный объект
+      );
+
+      res.json(updatedBooking);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Ошибка при обновлении booking" });
+    }
+  },
 };
 
 // BookingModel.findOneAndUpdate({ _id: id }, {...}, returnDocument: 'after')

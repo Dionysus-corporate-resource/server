@@ -23,6 +23,7 @@ export const check = {
   },
   isManager: async (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    console.log("isManager", token);
 
     if (!token) {
       return res.status(403).json({

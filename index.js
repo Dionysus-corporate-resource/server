@@ -10,7 +10,7 @@ import { bookingValidator } from "./validations/booking.js";
 import { check } from "./utils/checkAuth.js";
 
 dotenv.config();
-// Загружаем переменные из .env
+// Загружаем переменные из .env c
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -30,6 +30,7 @@ app.post("/auth/login", loginValidator, auth.login);
 app.get("/auth/me", check.isAuth, auth.getMe);
 
 app.post("/booking", check.isManager, bookingValidator, booking.create);
+app.put("/booking/:id", check.isManager, bookingValidator, booking.toggle);
 app.get("/booking", booking.getAll);
 app.get("/booking/:id", booking.getOne);
 app.delete("/booking/:id", check.isManager, booking.remove);
