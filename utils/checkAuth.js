@@ -21,6 +21,7 @@ export const check = {
       });
     }
   },
+
   isManager: async (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
     console.log("isManager", token);
@@ -41,6 +42,43 @@ export const check = {
 
       const hasBookingRoles = user.roles.some(
         (role) => role === "super-viser" || role === "manager",
+      );
+      console.log("role", hasBookingRoles);
+
+      if (!hasBookingRoles) {
+        return res.status(403).json({
+          message: "У вас нет прав для этого действия",
+        });
+      }
+
+      next();
+    } catch (err) {
+      return res.status(403).json({
+        message: "Ошибка при расшифровываннии токена",
+      });
+    }
+  },
+  isDispatcher: async (req, res, next) => {
+    const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    console.log("isDispatcher", token);
+
+    if (!token) {
+      return res.status(403).json({
+        message: "У вас нет доступа",
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(token, "secret123");
+      req.userId = decoded._id;
+
+      const user = await UserModel.findById(decoded._id);
+      console.log("userId", decoded._id);
+      console.log("user", user);
+
+      const hasBookingRoles = user.roles.some(
+        (role) =>
+          role === "super-viser" || role === "dispatcher" || role === "manager",
       );
       console.log("role", hasBookingRoles);
 
