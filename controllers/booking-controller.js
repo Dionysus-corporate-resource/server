@@ -9,25 +9,45 @@ export const booking = {
     }
     try {
       const doc = new BookingModel({
-        relevance: req.body.relevance,
-        cargoName: req.body.cargoName,
-        cargoAmount: req.body.cargoAmount,
-        loadType: req.body.loadType,
+        generalInformation: {
+          relevance: req.body.generalInformation?.relevance,
+          cargoName: req.body.generalInformation?.cargoName,
+          cargoAmount: req.body.generalInformation?.cargoAmount,
+          icon: req.body.generalInformation?.icon,
+        },
         location: {
-          loadingLocation: req.body.location.loadingLocation,
-          unloadingLocation: req.body.location.unloadingLocation,
-          distance: req.body.location.distance,
+          loadingLocation: req.body.location?.loadingLocation,
+          loadingLocationDate: req.body.location?.loadingLocationDate,
+          unloadingLocation: req.body.location?.unloadingLocation,
+          distance: req.body.location?.distance,
         },
         terms: {
-          price: req.body.terms.price,
-          paymentMethod: req.body.terms.paymentMethod,
-          truckType: req.body.terms.truckType,
+          price: req.body.terms?.price,
+          paymentMethod: req.body.terms?.paymentMethod,
+          advance: req.body.terms?.advance
+            ? {
+                percentage: req.body.terms.advance?.percentage,
+                period: req.body.terms.advance?.period,
+              }
+            : undefined,
+          loadingType: req.body.terms?.loadingType,
+          truckType: req.body.terms?.truckType,
         },
-        advance: {
-          percentage: req.body.advance.percentage,
-        },
+        requiredTransport: req.body.requiredTransport
+          ? {
+              carType: req.body.requiredTransport.carType,
+              carTypeUnLoading: req.body.requiredTransport.carTypeUnLoading,
+              carHeightLimit: req.body.requiredTransport.carHeightLimit,
+              carUsage: req.body.requiredTransport.carUsage
+                ? {
+                    count: req.body.requiredTransport.carUsage.count,
+                    carPeriod: req.body.requiredTransport.carUsage.carPeriod,
+                  }
+                : undefined,
+            }
+          : undefined,
         additionalInfo: req.body.additionalInfo,
-        manager: req.userId,
+        manager: req.userId, // Поле обязательное
       });
 
       const booking = await doc.save();
@@ -97,25 +117,45 @@ export const booking = {
       const updatedBooking = await BookingModel.findByIdAndUpdate(
         bookingId,
         {
-          relevance: req.body.relevance,
-          cargoName: req.body.cargoName,
-          cargoAmount: req.body.cargoAmount,
-          loadType: req.body.loadType,
+          generalInformation: {
+            relevance: req.body.generalInformation?.relevance,
+            cargoName: req.body.generalInformation?.cargoName,
+            cargoAmount: req.body.generalInformation?.cargoAmount,
+            icon: req.body.generalInformation?.icon,
+          },
           location: {
-            loadingLocation: req.body.location.loadingLocation,
-            unloadingLocation: req.body.location.unloadingLocation,
-            distance: req.body.location.distance,
+            loadingLocation: req.body.location?.loadingLocation,
+            loadingLocationDate: req.body.location?.loadingLocationDate,
+            unloadingLocation: req.body.location?.unloadingLocation,
+            distance: req.body.location?.distance,
           },
           terms: {
-            price: req.body.terms.price,
-            paymentMethod: req.body.terms.paymentMethod,
-            truckType: req.body.terms.truckType,
+            price: req.body.terms?.price,
+            paymentMethod: req.body.terms?.paymentMethod,
+            advance: req.body.terms?.advance
+              ? {
+                  percentage: req.body.terms.advance?.percentage,
+                  period: req.body.terms.advance?.period,
+                }
+              : undefined,
+            loadingType: req.body.terms?.loadingType,
+            truckType: req.body.terms?.truckType,
           },
-          advance: {
-            percentage: req.body.advance.percentage,
-          },
+          requiredTransport: req.body.requiredTransport
+            ? {
+                carType: req.body.requiredTransport.carType,
+                carTypeUnLoading: req.body.requiredTransport.carTypeUnLoading,
+                carHeightLimit: req.body.requiredTransport.carHeightLimit,
+                carUsage: req.body.requiredTransport.carUsage
+                  ? {
+                      count: req.body.requiredTransport.carUsage.count,
+                      carPeriod: req.body.requiredTransport.carUsage.carPeriod,
+                    }
+                  : undefined,
+              }
+            : undefined,
           additionalInfo: req.body.additionalInfo,
-          manager: req.userId,
+          manager: req.userId, // Поле обязательное
         },
         { new: true }, // возвращает обновленный объект
       );
