@@ -10,6 +10,14 @@ export const auth = {
       if (!errors.isEmpty()) {
         return res.status(400).json(errors.array());
       }
+
+      const existingUser = await UserModel.findOne({ email: req.body.email });
+      if (existingUser) {
+        return res.status(400).json({
+          message: "Пользователь с такой почтой уже существует",
+        });
+      }
+
       const password = req.body.password;
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(password, salt);
@@ -18,6 +26,7 @@ export const auth = {
         email: req.body.email,
         userName: req.body.userName,
         passwordHash: hash,
+        phone: req.body.phone,
       });
 
       const user = await doc.save();

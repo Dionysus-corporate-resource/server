@@ -4,6 +4,7 @@ export const registerValidator = [
   body("email", "Не верный формат почты").isEmail(),
   body("userName").isLength({ min: 3 }),
   body("password").isLength({ min: 6 }),
+  body("phone"),
 ];
 
 export const loginValidator = [

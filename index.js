@@ -21,7 +21,6 @@ mongoose
   .connect(process.env.DATABASE_URL)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Error connecting to MongoDB", err));
-
 // Маршруты
 app.get("/", (req, res) => {
   res.send("Привет, Roma! Это твой первый сервер на Express с модулями ES6!!");
