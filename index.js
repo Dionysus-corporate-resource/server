@@ -10,6 +10,7 @@ import { bookingValidator } from "./validations/booking.js";
 import { check } from "./utils/checkAuth.js";
 import { proposalsDevelopment } from "./controllers/proposals-development-controller.js";
 import { proposalsDevelopmentValidator } from "./validations/proposals-development.js";
+import { company } from "./controllers/company-controller.js";
 
 dotenv.config();
 // Загружаем переменные из .env c
@@ -18,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 mongoose
-  .connect(process.env.DATABASE_URL)
+  .connect(process.env.DATABASE_DEVELOP_URL)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Error connecting to MongoDB", err));
 // Маршруты
@@ -37,13 +38,21 @@ app.get("/booking", booking.getAll);
 app.get("/booking/:id", booking.getOne);
 app.delete("/booking/:id", check.isManager, booking.remove);
 // proposalsDevelopment
-
 app.get("/proposals-development", check.isAuth, proposalsDevelopment.getAll);
 app.post(
   "/proposals-development",
   check.isAuth,
   proposalsDevelopmentValidator,
   proposalsDevelopment.create,
+);
+// company
+app.post("/company/register", company.registerCompany);
+app.post("/company/login", company.login);
+app.post(
+  "/company/register-employee",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director"]),
+  company.registerLogisticianInCompany,
 );
 
 // Запуск сервера

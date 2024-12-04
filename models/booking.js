@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const BookingSchema = new mongoose.Schema(
+export const BookingSchema = new mongoose.Schema(
   {
     generalInformation: {
       icon: { type: String, required: true },
@@ -69,7 +69,7 @@ const BookingSchema = new mongoose.Schema(
     additionalInfo: { type: String },
     manager: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Logistician",
       require: true,
     },
   },
