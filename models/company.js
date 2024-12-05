@@ -16,11 +16,19 @@ const employeeSchema = new mongoose.Schema({
   },
 });
 
+const corporateBooking = {
+  corporateBookingData: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CorporateBooking",
+    default: [],
+  },
+};
+
 const CompanySchema = new mongoose.Schema(
   {
     nameCompany: { type: String, required: true },
     employees: [employeeSchema],
-    booking: [BookingSchema],
+    corporateBooking: [corporateBooking],
   },
   { timestamps: true },
 );

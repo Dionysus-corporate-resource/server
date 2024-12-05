@@ -46,6 +46,7 @@ app.post(
   proposalsDevelopment.create,
 );
 // company
+// auth
 app.post("/company/register", company.registerCompany);
 app.post("/company/login", company.login);
 app.post(
@@ -53,6 +54,37 @@ app.post(
   check.isExistingCompany,
   check.isNeedRoles(["general_director"]),
   company.registerLogisticianInCompany,
+);
+// corporate-booking
+app.post(
+  "/company/booking",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager"]),
+  company.createCorporateBooking,
+);
+app.get(
+  "/company/booking",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager", "dispatcher"]),
+  company.getAllCorporateBooking,
+);
+app.get(
+  "/company/booking/:id",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager", "dispatcher"]),
+  company.getOneCorporateBooking,
+);
+app.delete(
+  "/company/booking/:id",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager"]),
+  company.removeCorporateBooking,
+);
+app.put(
+  "/company/booking/:id",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager"]),
+  company.toggleCorporateBooking,
 );
 
 // Запуск сервера

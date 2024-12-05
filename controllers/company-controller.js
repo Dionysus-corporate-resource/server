@@ -3,6 +3,7 @@ import LogisticianModel from "../models/logistician.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
+import { CorporateBookingModel } from "../models/booking.js";
 
 export const company = {
   registerCompany: async (req, res) => {
@@ -49,7 +50,7 @@ export const company = {
             corporateRoles: ["general_director"],
           },
         ],
-        booking: [],
+        corporateBooking: [],
       });
       const company = await docCompany.save();
 
@@ -86,7 +87,7 @@ export const company = {
           corporateRoles: ["general_director"],
         },
       ],
-      booking: [],
+      corporateBooking: [],
     });
     const company = await docCompany.save();
 
@@ -239,68 +240,222 @@ export const company = {
       logisticianCompany,
     });
   },
+  createCorporateBooking: async (req, res) => {
+    try {
+      const doc = new CorporateBookingModel({
+        generalInformation: {
+          relevance: req.body.generalInformation.relevance,
+          cargoName: req.body.generalInformation.cargoName,
+          cargoAmount: req.body.generalInformation?.cargoAmount ?? null,
+          icon: req.body.generalInformation.icon,
+        },
+        location: {
+          loadingLocation: req.body.location.loadingLocation,
+          loadingLocationDate: req.body.location?.loadingLocationDate ?? null,
+          unloadingLocation: req.body.location.unloadingLocation,
+          distance: req.body.location.distance,
+        },
+        terms: {
+          price: req.body.terms.price,
+          paymentMethod: req.body.terms.paymentMethod,
+          advancePercentage: req.body.terms?.advancePercentage ?? null,
+          loadingType: req.body.terms.loadingType,
+        },
+        requiredTransport: {
+          carType: req.body.requiredTransport.carType,
+          carTypeUnLoading: req.body.requiredTransport.carTypeUnLoading,
+          carHeightLimit: req.body.requiredTransport?.carHeightLimit ?? null,
+          carUsage: {
+            count: req.body.requiredTransport.carUsage?.count ?? null,
+            carPeriod: req.body.requiredTransport.carUsage?.carPeriod ?? null,
+          },
+        },
+        additionalInfo: req.body?.additionalInfo ?? null,
+        manager: req.token._idLogistician,
+      });
+
+      const booking = await doc.save();
+
+      const existingCompany = await CompanyModel.findById(req.token._idCompany);
+      if (!existingCompany) {
+        return res.status(404).json({
+          message: "Такой компании не существует",
+        });
+      }
+
+      const corporateBooking = {
+        corporateBookingData: booking._id,
+      };
+
+      existingCompany.corporateBooking.push(corporateBooking);
+      await existingCompany.save();
+
+      res.json({
+        booking,
+        message: "Заявка успешно создана",
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Ошибка при создании booking" });
+    }
+  },
+  getAllCorporateBooking: async (req, res) => {
+    try {
+      const existingCompany = await CompanyModel.findById(req.token._idCompany)
+        .populate("corporateBooking.corporateBookingData")
+        .exec();
+
+      if (!existingCompany) {
+        res.sttaus(404).json({
+          message: "Компания не существует",
+        });
+      }
+      res.json(existingCompany.corporateBooking);
+    } catch (err) {
+      console.log(err);
+      res
+        .status(500)
+        .json({ message: "Не удалось получить корпоративные заявки" });
+    }
+  },
+  getOneCorporateBooking: async (req, res) => {
+    try {
+      // id заявки из общей модели "внутренний id"
+      const corporateBookingId = req.params.id;
+
+      const existingCompany = await CompanyModel.findById(req.token._idCompany)
+        .populate("corporateBooking.corporateBookingData")
+        .exec();
+
+      if (!existingCompany) {
+        res.sttaus(404).json({
+          message: "Компания не существует",
+        });
+      }
+      const oneCorporateBooking = existingCompany.corporateBooking.find(
+        (booking) => booking.corporateBookingData.id === corporateBookingId,
+      );
+
+      res.json(oneCorporateBooking);
+    } catch (err) {
+      console.log(err);
+      res
+        .status(500)
+        .json({ message: "Не удалось получить корпоративные заявки" });
+    }
+  },
+  removeCorporateBooking: async (req, res) => {
+    try {
+      // id заявки из общей модели "внутренний id"
+      const corporateBookingId = req.params.id;
+      // существует ли заявка в общей модели
+      const existingCorporateBooking =
+        await CorporateBookingModel.findById(corporateBookingId);
+      if (!existingCorporateBooking) {
+        return res.status(404).json({
+          message: "Такой корпаротивной заявки не существует",
+        });
+      }
+
+      // найдем компанию и заявку внутри нее
+      const existingCorporateBookingInCompany = await CompanyModel.findById(
+        req.token._idCompany,
+      );
+      // отсортируем массив заявок в компании по внутренемму, тем самым удалим ее
+      existingCorporateBookingInCompany.corporateBooking =
+        existingCorporateBookingInCompany.corporateBooking.filter(
+          (corporateBooking) =>
+            corporateBooking.corporateBookingData.toString() !==
+            corporateBookingId,
+        );
+      // сохраняем изменненую компанию
+      await existingCorporateBookingInCompany.save();
+
+      // удаляем корпаративную заявку из общей коллекции
+      const removeCorporateBooking =
+        await CorporateBookingModel.findByIdAndDelete(corporateBookingId);
+
+      // res.json({ sortByOneCorporateBooking, corporateBookingId });
+      res.json({
+        message: "Копоративная заявка удалена",
+        removeCorporateBooking,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Не удалось удалить корпоративную заявку",
+      });
+    }
+  },
+  toggleCorporateBooking: async (req, res) => {
+    try {
+      // id заявки из общей модели "внутренний id"
+      const corporateBookingId = req.params.id;
+      const updatedCorporateBooking =
+        await CorporateBookingModel.findByIdAndUpdate(
+          corporateBookingId,
+          {
+            generalInformation: {
+              relevance: req.body.generalInformation.relevance,
+              cargoName: req.body.generalInformation.cargoName,
+              cargoAmount: req.body.generalInformation?.cargoAmount ?? null,
+              icon: req.body.generalInformation.icon,
+            },
+            location: {
+              loadingLocation: req.body.location.loadingLocation,
+              loadingLocationDate:
+                req.body.location?.loadingLocationDate ?? null,
+              unloadingLocation: req.body.location.unloadingLocation,
+              distance: req.body.location.distance,
+            },
+            terms: {
+              price: req.body.terms.price,
+              paymentMethod: req.body.terms.paymentMethod,
+              advancePercentage: req.body.terms?.advancePercentage ?? null,
+              loadingType: req.body.terms.loadingType,
+            },
+            requiredTransport: {
+              carType: req.body.requiredTransport.carType,
+              carTypeUnLoading: req.body.requiredTransport.carTypeUnLoading,
+              carHeightLimit:
+                req.body.requiredTransport?.carHeightLimit ?? null,
+              carUsage: {
+                count: req.body.requiredTransport.carUsage?.count ?? null,
+                carPeriod:
+                  req.body.requiredTransport.carUsage?.carPeriod ?? null,
+              },
+            },
+            additionalInfo: req.body?.additionalInfo ?? null,
+            manager: req.token._idLogistician,
+          },
+          { new: true }, // возвращает обновленный объект
+        );
+
+      res.json({ updatedCorporateBooking });
+    } catch (error) {
+      res.status(500).json({
+        message: "Не удалось изменить корпаротивную заявку",
+      });
+    }
+  },
 };
 
-// const existingCompany = await CompanyModel.findOne({ nameCompany: req.body.nameCompany });
+// _idCompany: company._id,
+// _idLogistician: logistician._id,
+// rolesLogistician: ["general_director"],
 
-// if (!logisticianCompany) {
-//   return res.status(404).json({
-//     message: "Компания не найдена, или пустой штат сотрудников",
-//   });
+// Выкладывание заявки на общий сайт
+// const bookingId = req.params.bookingId;
+// const booking = await CorporateBookingModel.findById(bookingId);
+
+// if (!booking) {
+//   return res.status(404).json({ message: "Заявка не найдена" });
 // }
 
-// // Проверяем есть ли такой пользователь с такой почтой
-// const isEmailExist = logisticianCompany.employees.some((employee) => {
-//   // console.log("employee", employee);
-//   // if (!employee.userData.email) {
-//   //   return false;
-//   // }
-//   return employee.userData.email === req.body.email;
-// });
-
-// if (isEmailExist) {
-//   return res.status(401).json({
-//     message: "Email уже существует в массиве employees",
-//   });
+// // Проверяем, есть ли право на публикацию
+// if (booking.isPublished) {
+//   return res.status(400).json({ message: "Заявка уже опубликована" });
 // }
 
-// Создаем нового сотрудника
-// const newEmployee = {
-//   userData: {
-//     userName: req.body.userName,
-//     email: ,
-//     passwordHash: { type: String, require: true },
-//     phone: { type: String, require: true },
-//     roles: {
-//       type: [String],
-//       enum: ["super_viser", "dispatcher", "manager", "general_director"],
-//       default: [],
-//     },
-//   },
-//   additionalInfo: "Additionally info", // Дополнительная информация
-// };
-
-// const result = await CompanyModel.updateOne(
-//   { _id: req.token._idCompany }, // Условие поиска
-//   { $push: { employees: newEmployee } }, // Добавляем в массив
-// );
-
-// if (result.modifiedCount > 0) {
-//   return res.json({
-//     message: "Сотрудник успешно добавлен",
-//   });
-// } else {
-//   return res.status(400).json({
-//     message: "Ошибка при добавлении сотрудника",
-//   });
-// }
-
-// const isValidPassword = await bcrypt.compare(
-//   req.body.password,
-//   logistician._doc.passwordHash,
-// );
-//
-//   // Если ввел не правильный пароль
-// if (!isValidPassword) {
-//   return res.status(404).json({ message: "Не верный логин или пароль" });
-// }
+// // Публикуем заявку
+// booking.isPublished = true;
+// await booking.save();

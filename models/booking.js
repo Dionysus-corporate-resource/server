@@ -4,13 +4,13 @@ export const BookingSchema = new mongoose.Schema(
   {
     generalInformation: {
       icon: { type: String, required: true },
-      relevance: { type: Boolean, required: true },
+      relevance: { type: Boolean, default: true },
       cargoName: { type: String, required: true },
-      cargoAmount: { type: Number },
+      cargoAmount: { type: Number, default: null },
     },
     location: {
       loadingLocation: { type: String, required: true },
-      loadingLocationDate: { type: String },
+      loadingLocationDate: { type: String, default: null },
       unloadingLocation: { type: String, required: true },
       distance: { type: Number, required: true, min: 0 },
     },
@@ -21,14 +21,7 @@ export const BookingSchema = new mongoose.Schema(
         required: true,
         enum: ["NDS", "without_NDS", "cash"],
       },
-      advance: {
-        percentage: { type: Number, min: 0, max: 100 },
-        period: {
-          type: String,
-          required: true,
-          enum: ["loading", "un_loading"],
-        },
-      },
+      advancePercentage: { type: Number, min: 0, max: 100, default: null },
       loadingType: {
         type: String,
         required: true,
@@ -56,17 +49,19 @@ export const BookingSchema = new mongoose.Schema(
       },
       carHeightLimit: {
         type: Number,
+        min: 0,
+        default: null,
       },
       carUsage: {
-        count: { type: Number },
+        count: { type: Number, default: null },
         carPeriod: {
           type: String,
-          required: true,
           enum: ["Каждый_день", "Общее"],
+          default: null,
         },
       },
     },
-    additionalInfo: { type: String },
+    additionalInfo: { type: String, default: null },
     manager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Logistician",
@@ -76,4 +71,8 @@ export const BookingSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-export default mongoose.model("Booking", BookingSchema);
+export const BookingModel = mongoose.model("Booking", BookingSchema);
+export const CorporateBookingModel = mongoose.model(
+  "CorporateBooking",
+  BookingSchema,
+);

@@ -1,5 +1,5 @@
 import { validationResult } from "express-validator";
-import BookingModel from "../models/booking.js";
+import { BookingModel } from "../models/booking.js";
 
 export const booking = {
   create: async (req, res) => {

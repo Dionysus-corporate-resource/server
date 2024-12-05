@@ -132,12 +132,12 @@ export const check = {
         });
       }
 
-      // Проверка на роль, есть у пользователя роль general_director
-      if (!decoded.rolesLogistician.includes("general_director")) {
-        return res.status(404).json({
-          message: "У вас нет нужной роли(",
-        });
-      }
+      // // Проверка на роль, есть у пользователя роль general_director
+      // if (!decoded.rolesLogistician.includes("general_director")) {
+      //   return res.status(404).json({
+      //     message: "У вас нет нужной роли(",
+      //   });
+      // }
 
       next();
     } catch (err) {
