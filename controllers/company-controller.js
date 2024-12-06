@@ -280,11 +280,23 @@ export const company = {
           message: "Ген директор не должен удалять сам себя",
         });
       }
-
       // если сотрудник существует и ген директор не пытается удалить сам себя
       // найдем объект сотрудника в компании
       const companyId = req.token._idCompany;
       const companyWhereIsLogistician = await CompanyModel.findById(companyId);
+
+      // нужно проверить, не удаляет ли ген Директор сотрудника, которого нет в компании, но есть в общей базе
+
+      const isExistingLogicticianInCompany =
+        companyWhereIsLogistician.employees.find(
+          (employee) => employee.userData.toString() === logisticianId,
+        );
+      if (!isExistingLogicticianInCompany) {
+        return res.status(400).json({
+          message:
+            "Вы не можете удалить сотрудника, которого нет в вашей компании",
+        });
+      }
 
       // фильтруем массив сотрудников, и удаляем нужного сотрудника
       companyWhereIsLogistician.employees =
@@ -309,6 +321,53 @@ export const company = {
     } catch (error) {
       res.status(500).json({
         message: "Ошибка при удалении сотрудника",
+      });
+    }
+  },
+  toggleLogisticianRolesFromCompany: async (req, res) => {
+    try {
+      const employeeId = req.params.id;
+      const companyId = req.token._idCompany;
+      const company = await CompanyModel.findById(companyId);
+      const employeeForChangeRole = company.employees.find(
+        (employee) => employee.userData.toString() === employeeId,
+      );
+      if (!employeeForChangeRole) {
+        return res.status(404).json({
+          message: "Сотрудник не найден",
+        });
+      }
+
+      // Проверка, чтобы генДиректор не мог поменять роль
+      if (employeeForChangeRole.corporateRoles.includes("general_director")) {
+        return res.status(400).json({
+          message: "Ген Диектор не должен менять себе роль(",
+        });
+      }
+      // Найти пользователя в компании, сохранить
+      // Удалить из компании
+      // Изменить и сохранить в компанию
+
+      const newDataForLagistician = {
+        additionalInfo: employeeForChangeRole.additionalInfo,
+        userData: employeeForChangeRole.userData,
+        corporatePasswordHash: employeeForChangeRole.corporatePasswordHash,
+        corporateRoles: req.body.roles,
+        _id: employeeForChangeRole._id,
+      };
+      company.employees = company.employees.filter(
+        (employee) => employee.userData.toString() !== employeeId,
+      );
+      await company.save();
+      company.employees = [...company.employees, newDataForLagistician];
+      await company.save();
+
+      res.json({
+        message: "Роль сотрудника обновлена",
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Ошибка при изменении роли сотрудника",
       });
     }
   },
