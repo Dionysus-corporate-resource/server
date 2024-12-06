@@ -158,88 +158,152 @@ export const company = {
     });
   },
   registerLogisticianInCompany: async (req, res) => {
-    const logisticianCompany = await CompanyModel.findOne({
-      _id: req.token._idCompany,
-    }).populate({
-      path: "employees.userData", // Заполняем поле userData данными из Logistician
-      // select: "email", // Забираем только поле email
-    });
-    // Если компания не существует
-    if (!logisticianCompany) {
-      return res.status(404).json({
-        message: "Такой компании не существует",
-      });
-    }
+    try {
+      const logisticianCompany = await CompanyModel.findOne({
+        _id: req.token._idCompany,
+      })
+        .populate("employees.userData")
+        .exec();
+      // Если компания не существует
+      if (!logisticianCompany) {
+        return res.status(404).json({
+          message: "Такой компании не существует",
+        });
+      }
 
-    // Есть ли уже сотрудник с такой почтой
-    const existingLogicyicianWithThisEmail = logisticianCompany.employees.find(
-      (employee) => employee.userData.email === req.body.email,
-    );
-    // Если нашел сотрудника с такой почтой
-    if (existingLogicyicianWithThisEmail) {
-      return res.status(400).json({
-        message: "Сотрудник с такой почтой уже сущесвтует в вашей компании",
-      });
-    }
+      // Есть ли уже сотрудник с такой почтой
+      const existingLogicyicianWithThisEmail =
+        logisticianCompany.employees.find(
+          (employee) => employee.userData.email === req.body.email,
+        );
+      // Если нашел сотрудника с такой почтой
+      if (existingLogicyicianWithThisEmail) {
+        return res.status(400).json({
+          message: "Сотрудник с такой почтой уже сущесвтует в вашей компании",
+        });
+      }
 
-    // Проверка - зарегистрирован ли такой логист под этой почтой в общей базе
-    const existingLogistician = await LogisticianModel.findOne({
-      email: req.body.email,
-    });
-    // Если логист еще не регистрировался в общей базе и хочет попасть в компанию
-    // По факту тут генДиректор придумывает ему пароль как для корпоративного ресурса так и для общего сайта
-    if (!existingLogistician) {
+      //
+
+      // Проверка - зарегистрирован ли такой логист под этой почтой в общей базе
+      const existingLogistician = await LogisticianModel.findOne({
+        email: req.body.email,
+      });
+      // Если логист еще не регистрировался в общей базе и хочет попасть в компанию
+      // По факту тут генДиректор придумывает ему пароль как для корпоративного ресурса так и для общего сайта
+      if (!existingLogistician) {
+        const password = req.body.password;
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        // регистрируем его как логиста с ролью dispatcher по умолчанию
+        const doc = new LogisticianModel({
+          email: req.body.email,
+          userName: req.body.userName,
+          passwordHash: hash,
+          phone: req.body.phone,
+          roles: ["dispatcher"],
+        });
+        // сохраянем логиста в общей базе
+        const logistician = await doc.save();
+
+        const newEmployee = {
+          additionalInfo: "additionaly info",
+          userData: logistician._id,
+          corporatePasswordHash: hash,
+          corporateRoles: ["dispatcher"],
+        };
+
+        // Добавляем объект в массив employees
+        logisticianCompany.employees.push(newEmployee);
+        await logisticianCompany.save();
+
+        return res.json({
+          message: "Пользователь зарегистрирован и добавлен",
+        });
+      }
+
+      // Если пользователь уже существует в общей базе логистов
       const password = req.body.password;
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(password, salt);
 
-      // регистрируем его как логиста с ролью dispatcher по умолчанию
-      const doc = new LogisticianModel({
-        email: req.body.email,
-        userName: req.body.userName,
-        passwordHash: hash,
-        phone: req.body.phone,
-        roles: ["dispatcher"],
-      });
-      // сохраянем логиста в общей базе
-      const logistician = await doc.save();
-
       const newEmployee = {
         additionalInfo: "additionaly info",
-        userData: logistician._id,
+        userData: existingLogistician._id,
         corporatePasswordHash: hash,
         corporateRoles: ["dispatcher"],
       };
 
-      // Добавляем объект в массив employees
       logisticianCompany.employees.push(newEmployee);
       await logisticianCompany.save();
 
-      return res.json({
-        message: "Пользователь зарегистрирован и добавлен",
+      res.json({
+        message: "Сотрудник успешно добавлен",
+        logisticianCompany,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        message: "Ошибак при регистрации сотрудника",
       });
     }
-
-    // Если пользователь уже существует в общей базе логистов
-    const password = req.body.password;
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-
-    const newEmployee = {
-      additionalInfo: "additionaly info",
-      userData: existingLogistician._id,
-      corporatePasswordHash: hash,
-      corporateRoles: ["dispatcher"],
-    };
-
-    logisticianCompany.employees.push(newEmployee);
-    await logisticianCompany.save();
-
-    res.json({
-      message: "Сотрудник успешно добавлен",
-      logisticianCompany,
-    });
   },
+  removeLogisticianFromCompany: async (req, res) => {
+    try {
+      const rolesIsLogistician = req.token.rolesLogistician;
+      // id берем из внутреней вложенности
+      const logisticianId = req.params.id;
+
+      // проверим, чтобы ген директор не удалял сам себя
+      // достаем из обшей модели сотрудника
+      const logisticianFromModelById =
+        await LogisticianModel.findById(logisticianId);
+      // Если его нет в общей базе
+      if (!logisticianFromModelById) {
+        return res.status(400).json({
+          message: "Сотрудник не найден в общей базе пользователей",
+        });
+      }
+      // проверка на удаление ген директора
+      if (logisticianFromModelById.roles.includes("general_director")) {
+        return res.status(400).json({
+          message: "Ген директор не должен удалять сам себя",
+        });
+      }
+
+      // если сотрудник существует и ген директор не пытается удалить сам себя
+      // найдем объект сотрудника в компании
+      const companyId = req.token._idCompany;
+      const companyWhereIsLogistician = await CompanyModel.findById(companyId);
+
+      // фильтруем массив сотрудников, и удаляем нужного сотрудника
+      companyWhereIsLogistician.employees =
+        companyWhereIsLogistician.employees.filter(
+          (logistician) => logistician.userData.toString() !== logisticianId,
+        );
+      // сохраняем измененный массив
+      await companyWhereIsLogistician.save();
+
+      // находим и удаляем сотрудника из общей модели
+      const removeLogistician =
+        await LogisticianModel.findByIdAndDelete(logisticianId);
+      if (!removeLogistician) {
+        return res.status(404).json({
+          message: "Не смогли найти и удалить сотрудника из общей базы",
+        });
+      }
+
+      res.json({
+        message: "Сотрудник успешно удален из компании и общей базы",
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Ошибка при удалении сотрудника",
+      });
+    }
+  },
+  //
   createCorporateBooking: async (req, res) => {
     try {
       const doc = new CorporateBookingModel({

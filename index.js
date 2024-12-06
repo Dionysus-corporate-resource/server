@@ -55,6 +55,12 @@ app.post(
   check.isNeedRoles(["general_director"]),
   company.registerLogisticianInCompany,
 );
+app.delete(
+  "/company/employee/:id",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager"]),
+  company.removeLogisticianFromCompany,
+);
 // corporate-booking
 app.post(
   "/company/booking",
