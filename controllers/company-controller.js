@@ -215,11 +215,16 @@ export const company = {
         };
 
         // Добавляем объект в массив employees
-        logisticianCompany.employees.push(newEmployee);
+        // Возможно тут ошибка
+        logisticianCompany.employees = [
+          ...logisticianCompany.employees,
+          newEmployee,
+        ];
         await logisticianCompany.save();
 
         return res.json({
           message: "Пользователь зарегистрирован и добавлен",
+          logistician,
         });
       }
 
@@ -235,7 +240,11 @@ export const company = {
         corporateRoles: ["dispatcher"],
       };
 
-      logisticianCompany.employees.push(newEmployee);
+      // logisticianCompany.employees.push(newEmployee);
+      logisticianCompany.employees = [
+        ...logisticianCompany.employees,
+        newEmployee,
+      ];
       await logisticianCompany.save();
 
       res.json({

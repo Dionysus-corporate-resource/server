@@ -20,7 +20,6 @@ const corporateBooking = {
   corporateBookingData: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CorporateBooking",
-    default: [],
   },
 };
 
