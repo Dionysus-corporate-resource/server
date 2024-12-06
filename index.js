@@ -24,7 +24,9 @@ mongoose
   .catch((err) => console.error("Error connecting to MongoDB", err));
 // Маршруты
 app.get("/", (req, res) => {
-  res.send("Привет, Roma! Это твой первый сервер на Express с модулями ES6!!");
+  res.send(
+    "Привет, Roma! Это твой первый сервер на Express с модулями ES6!! New Version",
+  );
 });
 
 // auth
