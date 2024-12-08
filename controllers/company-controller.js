@@ -7,37 +7,75 @@ import { CorporateBookingModel } from "../models/booking.js";
 
 export const company = {
   registerCompany: async (req, res) => {
-    // существует ли компания
-    const existingCompany = await CompanyModel.findOne({
-      nameCompany: req.body.nameCompany,
-    });
-    if (existingCompany) {
-      return res.status(400).json({
-        message: "Компания с таким именем уже существует",
+    try {
+      // существует ли компания
+      const existingCompany = await CompanyModel.findOne({
+        nameCompany: req.body.nameCompany,
       });
-    }
+      if (existingCompany) {
+        return res.status(400).json({
+          message: "Компания с таким именем уже существует",
+        });
+      }
 
-    // Проверяем есть ои такой логист
-    const existingLogistician = await LogisticianModel.findOne({
-      email: req.body.email,
-    });
-    // Если логист еще не регистрировался и его нет и хочет создать компанию
-    if (!existingLogistician) {
+      // Проверяем есть ои такой логист
+      const existingLogistician = await LogisticianModel.findOne({
+        email: req.body.email,
+      });
+      // Если логист еще не регистрировался и его нет и хочет создать компанию
+      if (!existingLogistician) {
+        const password = req.body.password;
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        // регистрируем его как логиста с ролью general_director
+        const doc = new LogisticianModel({
+          email: req.body.email,
+          userName: req.body.userName,
+          passwordHash: hash,
+          phone: req.body.phone,
+          roles: ["general_director"],
+          // req.body.roles - ["general_director"]
+        });
+        // сохраянем логиста в общей базе
+        const logistician = await doc.save();
+
+        // создаем компанию и добавляем в него уже созданого сотрудника
+        const docCompany = new CompanyModel({
+          nameCompany: req.body.nameCompany,
+          employees: [
+            {
+              additionalInfo: "General Director additionalInfo",
+              userData: logistician._id, // Ссылка на логиста
+              corporatePasswordHash: hash,
+              corporateRoles: ["general_director"],
+            },
+          ],
+          corporateBooking: [],
+        });
+        const company = await docCompany.save();
+
+        const token = jwt.sign(
+          {
+            _idCompany: company._id,
+            _idLogistician: logistician._id,
+            rolesLogistician: ["general_director"],
+          },
+          "secret123",
+          { expiresIn: "30d" },
+        );
+
+        return res.json({ token, logistician });
+      }
+
+      // Если уже зарегестрирован и хочет создать компанию
+      const logistician = await LogisticianModel.findOne({
+        email: req.body.email,
+      });
+
       const password = req.body.password;
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(password, salt);
-
-      // регистрируем его как логиста с ролью general_director
-      const doc = new LogisticianModel({
-        email: req.body.email,
-        userName: req.body.userName,
-        passwordHash: hash,
-        phone: req.body.phone,
-        roles: ["general_director"],
-        // req.body.roles - ["general_director"]
-      });
-      // сохраянем логиста в общей базе
-      const logistician = await doc.save();
 
       // создаем компанию и добавляем в него уже созданого сотрудника
       const docCompany = new CompanyModel({
@@ -64,98 +102,81 @@ export const company = {
         { expiresIn: "30d" },
       );
 
-      return res.json({ token, logistician });
+      return res.json({ token, docCompany });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        message: "Ошибка при создании компании",
+      });
     }
-
-    // Если уже зарегестрирован и хочет создать компанию
-    const logistician = await LogisticianModel.findOne({
-      email: req.body.email,
-    });
-
-    const password = req.body.password;
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-
-    // создаем компанию и добавляем в него уже созданого сотрудника
-    const docCompany = new CompanyModel({
-      nameCompany: req.body.nameCompany,
-      employees: [
-        {
-          additionalInfo: "General Director additionalInfo",
-          userData: logistician._id, // Ссылка на логиста
-          corporatePasswordHash: hash,
-          corporateRoles: ["general_director"],
-        },
-      ],
-      corporateBooking: [],
-    });
-    const company = await docCompany.save();
-
-    const token = jwt.sign(
-      {
-        _idCompany: company._id,
-        _idLogistician: logistician._id,
-        rolesLogistician: ["general_director"],
-      },
-      "secret123",
-      { expiresIn: "30d" },
-    );
-
-    return res.json({ token, docCompany });
   },
   login: async (req, res) => {
-    // Ищем существует ли компания с таким именем
-    const existingCompany = await CompanyModel.findOne({
-      nameCompany: req.body.nameCompany,
-    })
-      .populate({
-        path: "employees.userData", // Указываем поле, которое хотим заполнить
+    try {
+      // Ищем существует ли компания с таким именем
+      const existingCompany = await CompanyModel.findOne({
+        nameCompany: req.body.nameCompany,
       })
-      .exec();
-    // Если такой компании не существует
-    if (!existingCompany) {
-      return res.status(404).json({
-        message: "Такой компании не существует",
+        .populate({
+          path: "employees.userData", // Указываем поле, которое хотим заполнить
+        })
+        // .populate({
+        //   path: "corporateBooking.corporateBookingData",
+        //   populate: {
+        //     path: "manager",
+        //   },
+        // })
+        .exec();
+      // Если такой компании не существует
+      if (!existingCompany) {
+        return res.status(404).json({
+          message: "Такой компании не существует",
+        });
+      }
+
+      // Проверяем есть ли такая почта хотя-бы у одного сотрудника компании
+      const existingEmmailLogisticianInCompany = existingCompany.employees.find(
+        (employee) => employee.userData.email === req.body.email,
+      );
+
+      // Если нет
+      if (!existingEmmailLogisticianInCompany) {
+        res.status(404).json({
+          message: "Вы не сотрудник этой компании",
+        });
+      }
+
+      // проверка на правильнось введенного пароля
+      const isValidPassword = await bcrypt.compare(
+        req.body.password,
+        existingEmmailLogisticianInCompany._doc.corporatePasswordHash,
+      );
+      if (!isValidPassword) {
+        return res
+          .status(404)
+          .json({ message: "Не верный корпоративный пароль" });
+      }
+
+      // Если пароль верный
+      const token = jwt.sign(
+        {
+          _idCompany: existingCompany._id,
+          _idLogistician: existingEmmailLogisticianInCompany.userData._id,
+          rolesLogistician: existingEmmailLogisticianInCompany.corporateRoles,
+        },
+        "secret123",
+        { expiresIn: "30d" },
+      );
+      res.json({
+        token,
+        LogisticianDto: existingEmmailLogisticianInCompany,
+        companyDto: existingCompany,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        message: "Ошибка при входе в компанию",
       });
     }
-
-    // Проверяем есть ли такая почта хотя-бы у одного сотрудника компании
-    const existingEmmailLogisticianInCompany = existingCompany.employees.find(
-      (employee) => employee.userData.email === req.body.email,
-    );
-
-    // Если нет
-    if (!existingEmmailLogisticianInCompany) {
-      res.status(404).json({
-        message: "Вы не сотрудник этой компании",
-      });
-    }
-
-    // проверка на правильнось введенного пароля
-    const isValidPassword = await bcrypt.compare(
-      req.body.password,
-      existingEmmailLogisticianInCompany._doc.corporatePasswordHash,
-    );
-    if (!isValidPassword) {
-      return res
-        .status(404)
-        .json({ message: "Не верный корпоративный пароль" });
-    }
-
-    // Если пароль верный
-    const token = jwt.sign(
-      {
-        _idCompany: existingCompany._id,
-        _idLogistician: existingEmmailLogisticianInCompany.userData._id,
-        rolesLogistician: existingEmmailLogisticianInCompany.corporateRoles,
-      },
-      "secret123",
-      { expiresIn: "30d" },
-    );
-    res.json({
-      token,
-      existingEmmailLogisticianInCompany,
-    });
   },
   registerLogisticianInCompany: async (req, res) => {
     try {
@@ -371,6 +392,21 @@ export const company = {
       });
     }
   },
+  getAllEmployees: async (req, res) => {
+    try {
+      const companyId = req.token._idCompany;
+      const company = await CompanyModel.findById(companyId).populate({
+        path: "employees.userData",
+      });
+
+      res.json(company.employees);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: "Ошибка при получении сотрудников",
+      });
+    }
+  },
   //
   createCorporateBooking: async (req, res) => {
     try {
@@ -434,8 +470,18 @@ export const company = {
   getAllCorporateBooking: async (req, res) => {
     try {
       const existingCompany = await CompanyModel.findById(req.token._idCompany)
-        .populate("corporateBooking.corporateBookingData")
+        .populate({
+          path: "corporateBooking.corporateBookingData",
+          populate: {
+            path: "manager",
+          },
+        })
         .exec();
+
+      // .populate([
+      //       { path: 'followers.users' },
+      //       { path: 'arts.items' }
+      //     ]).populate('subscriptions.users');
 
       if (!existingCompany) {
         res.sttaus(404).json({

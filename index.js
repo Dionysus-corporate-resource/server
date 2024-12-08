@@ -18,6 +18,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// DATABASE_DEVELOP_URL
+// DATABASE_URL
 mongoose
   .connect(process.env.DATABASE_URL)
   .then(() => console.log("Connected to MongoDB"))
@@ -60,7 +62,7 @@ app.post(
 app.delete(
   "/company/employee/:id",
   check.isExistingCompany,
-  check.isNeedRoles(["general_director", "manager"]),
+  check.isNeedRoles(["general_director"]),
   company.removeLogisticianFromCompany,
 );
 app.put(
@@ -69,7 +71,12 @@ app.put(
   check.isNeedRoles(["general_director"]),
   company.toggleLogisticianRolesFromCompany,
 );
-
+app.get(
+  "/company/employee",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager"]),
+  company.getAllEmployees,
+);
 // corporate-booking
 app.post(
   "/company/booking",

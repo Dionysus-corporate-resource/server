@@ -160,6 +160,7 @@ export const check = {
       try {
         const decoded = jwt.verify(token, "secret123");
         req.token = decoded;
+        console.log("decoded token", decoded);
 
         const isNextRole = allowedRoles.some((role) =>
           decoded.rolesLogistician.includes(role),
@@ -169,6 +170,8 @@ export const check = {
         if (!isNextRole) {
           return res.status(403).json({
             message: "Недостаточно прав для доступа",
+            decdedNew: "decoded",
+            decoded,
           });
         }
 
