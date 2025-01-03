@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 export const BookingSchema = new mongoose.Schema(
   {
+    status: {
+      type: String,
+      requires: true,
+      enum: ["active", "inProgress", "inactive"],
+      default: "active",
+    },
     generalInformation: {
       icon: { type: String, required: true },
       relevance: { type: Boolean, default: true },

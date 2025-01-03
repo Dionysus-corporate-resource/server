@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { CorporateBookingModel } from "../models/booking.js";
 
 export const company = {
+  // company-employee
   registerCompany: async (req, res) => {
     try {
       // существует ли компания
@@ -407,7 +408,171 @@ export const company = {
       });
     }
   },
-  //
+  // flight
+  getFlightForCorporateBooking: async (req, res) => {
+    try {
+      const bookingId = req.params.bookingId;
+      const flightId = req.params.flightId;
+      const companyId = req.token._idCompany;
+      const company = await CompanyModel.findById(companyId);
+
+      let requiredCorporateBooking = company.corporateBooking.find(
+        (booking) => booking.corporateBookingData.toString() === bookingId,
+      );
+      if (!requiredCorporateBooking) {
+        res.status(404).json({
+          message: "Заявка не найдена",
+        });
+      }
+
+      // ищем в заявке нужный нам рейс, который нам нужен
+      let requiredFlight = requiredCorporateBooking.flight.find(
+        (flight) => flight._id.toString() === flightId,
+      );
+      if (!requiredFlight) {
+        res.status(404).json({ message: "Нужный вам рейс не найден" });
+      }
+
+      res.json({
+        message: "Рейс успешно получен",
+        requiredFlight,
+      });
+    } catch (err) {}
+  },
+  createFlightForCorporateBooking: async (req, res) => {
+    try {
+      // TODO: перепиши на mongoose метод
+      const corporateBookingId = req.params.id;
+      const companyId = req.token._idCompany;
+      const dispatcherId = req.token._idLogistician;
+
+      const company = await CompanyModel.findById(companyId);
+
+      // ищем заявку, куда хотим поставить машину на рейс
+      const corporateBooking = company.corporateBooking.find(
+        (booking) =>
+          booking.corporateBookingData.toString() === corporateBookingId,
+      );
+      // если не нашел заявку
+      if (!corporateBooking) {
+        res.status(404).json({
+          message: "Корпоративная заявка не найдена",
+        });
+      }
+
+      // добавляем в заявку рейс
+      corporateBooking.flight.push({
+        organization: req.body.organization,
+        cars: req.body.cars,
+        dispatcher: dispatcherId,
+      });
+
+      // // удаляем заявку из компании, в которую хотим добавить рейс
+      // company.corporateBooking = company.corporateBooking.filter(
+      //   (booking) =>
+      //     booking.corporateBookingData.toString() === corporateBookingId,
+      // );
+      // company.corporateBooking =
+      //   company.corporateBooking.push(corporateBooking);
+      await company.save();
+
+      res.json({
+        message: "Рейс успешно поставлен",
+        // corporateBooking,
+        company,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        message: "Ошибка при создании рейса",
+      });
+    }
+  },
+  toggleFlightCorporateBooking: async (req, res) => {
+    try {
+      const bookingId = req.params.bookingId;
+      const flightId = req.params.flightId;
+      const companyId = req.token._idCompany;
+      const logisticianId = req.token._idLogistician;
+      const company = await CompanyModel.findById(companyId);
+
+      let requiredCorporateBooking = company.corporateBooking.find(
+        (booking) => booking.corporateBookingData.toString() === bookingId,
+      );
+      if (!requiredCorporateBooking) {
+        res.status(404).json({
+          message: "Заявка не найдена",
+        });
+      }
+
+      // ищем в заявке нужный нам рейс, который хотим изменить
+      let requiredFlight = requiredCorporateBooking.flight.find(
+        (flight) => flight._id.toString() === flightId,
+      );
+      if (!requiredFlight) {
+        res.status(404).json({ message: "Нужный вам рейс не найден" });
+      }
+
+      // удалим рейс из заявки
+      requiredCorporateBooking.flight = requiredCorporateBooking.flight.filter(
+        (flight) => flight._id.toString() !== flightId,
+      );
+      // добавляем новую
+      requiredCorporateBooking.flight.push({
+        _id: requiredFlight._id,
+        cars: req.body.cars,
+        organization: req.body.organization,
+        dispatcher: logisticianId,
+      });
+
+      await company.save();
+
+      res.json({
+        message: "Данные рейса обновлены",
+        // requiredCorporateBooking,
+        company,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        message: "Не получилось изменить рейс по заявке",
+      });
+    }
+  },
+  removeFlightCorporateBooking: async (req, res) => {
+    try {
+      const bookingId = req.params.bookingId;
+      const flightId = req.params.flightId;
+      const companyId = req.token._idCompany;
+      const company = await CompanyModel.findById(companyId);
+
+      let requiredCorporateBooking = company.corporateBooking.find(
+        (booking) => booking.corporateBookingData.toString() === bookingId,
+      );
+      if (!requiredCorporateBooking) {
+        res.status(404).json({
+          message: "Заявка не найдена",
+        });
+      }
+
+      requiredCorporateBooking.flight = requiredCorporateBooking.flight.filter(
+        (flight) => flight._id.toString() !== flightId,
+      );
+
+      await company.save();
+
+      res.json({
+        message: "Удаление рейса прошло успешно",
+        // requiredCorporateBooking,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        message: "Не получилось удалить рейс",
+      });
+    }
+  },
+  // corporate-booking
   createCorporateBooking: async (req, res) => {
     try {
       const doc = new CorporateBookingModel({
@@ -474,6 +639,12 @@ export const company = {
           path: "corporateBooking.corporateBookingData",
           populate: {
             path: "manager",
+          },
+        })
+        .populate({
+          path: "corporateBooking.flight",
+          populate: {
+            path: "dispatcher",
           },
         })
         .exec();
@@ -612,6 +783,34 @@ export const company = {
     } catch (error) {
       res.status(500).json({
         message: "Не удалось изменить корпаротивную заявку",
+      });
+    }
+  },
+  toggleCorporateBookingStatus: async (req, res) => {
+    try {
+      const corporateBookingId = req.params.id;
+      const newStatus = req.body.status;
+
+      const updateCorporateBooking =
+        await CorporateBookingModel.findByIdAndUpdate(
+          corporateBookingId,
+          {
+            $set: { status: newStatus },
+          },
+          { new: true },
+        );
+
+      if (!updateCorporateBooking) {
+        return res.status(400).json({
+          message: "Не удалось обновить статус заявки",
+        });
+      }
+      return res.json({
+        updateCorporateBooking,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Ошибка при изменении статуса заявки",
       });
     }
   },

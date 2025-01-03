@@ -108,6 +108,37 @@ app.put(
   check.isNeedRoles(["general_director", "manager"]),
   company.toggleCorporateBooking,
 );
+app.put(
+  "/company/booking-status/:id",
+  check.isExistingCompany,
+  check.isNeedRoles(["general_director", "manager"]),
+  company.toggleCorporateBookingStatus,
+);
+// flight
+app.get(
+  "/company/flight/:bookingId/:flightId",
+  check.isExistingCompany,
+  check.isNeedRoles(["dispatcher", "general_director"]),
+  company.getFlightForCorporateBooking,
+);
+app.post(
+  "/company/flight/:id",
+  check.isExistingCompany,
+  check.isNeedRoles(["dispatcher", "general_director"]),
+  company.createFlightForCorporateBooking,
+);
+app.put(
+  "/company/flight/:bookingId/:flightId",
+  check.isExistingCompany,
+  check.isNeedRoles(["dispatcher", "general_director"]),
+  company.toggleFlightCorporateBooking,
+);
+app.delete(
+  "/company/flight/:bookingId/:flightId",
+  check.isExistingCompany,
+  check.isNeedRoles(["dispatcher", "general_director"]),
+  company.removeFlightCorporateBooking,
+);
 
 // Запуск сервера
 const PORT = 3000;

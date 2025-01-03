@@ -162,11 +162,12 @@ export const check = {
         req.token = decoded;
         console.log("decoded token", decoded);
 
+        // проверка на подходящие роли
         const isNextRole = allowedRoles.some((role) =>
           decoded.rolesLogistician.includes(role),
         );
 
-        // Если переданы роли, проверяем их
+        // Если переданы роли не подходят
         if (!isNextRole) {
           return res.status(403).json({
             message: "Недостаточно прав для доступа",
