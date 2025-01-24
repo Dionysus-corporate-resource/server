@@ -130,7 +130,8 @@ export const authPublicSite = {
   },
   login: async (req, res) => {
     try {
-      const user = await UserModel.findOne({ email: req.body.email });
+      const user = await Logistician.findOne({ email: req.body.email }).populate("companyPublicData").exec();
+
       if (!user) {
         return res
           .status(404)

@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
 
 // auth
 app.post("/auth/register", registerValidator, authPublicSite.register);
-// app.post("/auth/login", loginValidator, authPublicSite.login);
+app.post("/auth/login", loginValidator, authPublicSite.login);
 // app.get("/auth/me", check.isAuth, authPublicSite.getMe);
 
 // booking
