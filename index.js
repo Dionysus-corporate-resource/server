@@ -3,7 +3,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 //
-import { registerValidator, loginValidator } from "./validations/authPublic.js";
+import {
+  registerValidator,
+  loginValidator,
+  updateProfileValidator,
+} from "./validations/authPublic.js";
 import { authPublicSite } from "./controllers/user-controller.js";
 import { booking } from "./controllers/booking-controller.js";
 import { bookingValidator } from "./validations/booking.js";
@@ -34,6 +38,12 @@ app.get("/", (req, res) => {
 // auth
 app.post("/auth/register", registerValidator, authPublicSite.register);
 app.post("/auth/login", loginValidator, authPublicSite.login);
+app.patch(
+  "/users/profile",
+  check.isAuth,
+  updateProfileValidator,
+  authPublicSite.updateProfile,
+);
 // app.get("/auth/me", check.isAuth, authPublicSite.getMe);
 
 // booking
