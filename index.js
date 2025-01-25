@@ -44,7 +44,7 @@ app.patch(
   updateProfileValidator,
   authPublicSite.updateProfile,
 );
-// app.get("/auth/me", check.isAuth, authPublicSite.getMe);
+app.get("/auth/me", check.isAuth, authPublicSite.getMe);
 
 // booking
 // app.post("/booking", check.isManager, bookingValidator, booking.create);

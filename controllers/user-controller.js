@@ -164,7 +164,9 @@ export const authPublicSite = {
   },
   getMe: async (req, res) => {
     try {
-      const user = await UserModel.findById(req.userId);
+      const user = await Logistician.findById(req.userId)
+        .populate("companyPublicData")
+        .exec();
 
       if (!user) {
         return res.status(404).json({
@@ -176,8 +178,8 @@ export const authPublicSite = {
 
       res.json(userData);
     } catch (err) {
-      res.status(400).json({
-        message: "Не верный token",
+      res.status(500).json({
+        message: "Не вышло получить данные пользователя",
       });
     }
   },
