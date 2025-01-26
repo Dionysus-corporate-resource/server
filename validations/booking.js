@@ -1,114 +1,120 @@
 import { body } from "express-validator";
 
 export const bookingValidator = [
-  // General Information
+  // Basic Info
   body(
-    "generalInformation.icon",
-    "Cargo name must be a string with at least 3 characters",
+    "basicInfo.distance",
+    "Расстояние должно быть строкой и не может быть пустым",
+  )
+    .isString()
+    .notEmpty(),
+  body(
+    "basicInfo.loadingLocation.name",
+    "Название места погрузки должно быть строкой и не может быть пустым",
+  )
+    .isString()
+    .notEmpty(),
+  body(
+    "basicInfo.loadingLocation.coordinates",
+    "Координаты должны быть массивом из двух чисел или null",
+  )
+    .optional()
+    .custom((value) => {
+      if (value === null) return true;
+      return (
+        Array.isArray(value) &&
+        value.length === 2 &&
+        value.every((coord) => typeof coord === "number")
+      );
+    }),
+  body(
+    "basicInfo.unLoadingLocation",
+    "Место выгрузки должно быть строкой и не может быть пустым",
+  )
+    .isString()
+    .notEmpty(),
+  body("basicInfo.tonnage", "Тоннаж должен быть строкой и не может быть пустым")
+    .isString()
+    .notEmpty(),
+  body(
+    "basicInfo.culture",
+    "Культура должна быть строкой и не может быть пустым значением",
+  )
+    .isString()
+    .notEmpty(),
+
+  // Conditions Transportation
+  body(
+    "conditionsTransportation.loadingMethod",
+    "Метод погрузки должен быть строкой и не может быть пустым",
+  )
+    .isString()
+    .notEmpty(),
+  body(
+    "conditionsTransportation.scaleCapacity",
+    "Вместимость весов должна быть строкой и не может быть пустой",
+  )
+    .isString()
+    .notEmpty(),
+  body(
+    "conditionsTransportation.loadingDate",
+    "Дата погрузки должна быть действительной датой",
   ).isString(),
-  body(
-    "generalInformation.relevance",
-    "Relevance must be a boolean value",
-  ).isBoolean(),
-  body(
-    "generalInformation.cargoName",
-    "Cargo name must be a string with at least 3 characters",
-  )
-    .isString()
-    .isLength({ min: 3 }),
-  body(
-    "generalInformation.cargoAmount",
-    "Cargo amount must be a positive number",
-  )
-    .optional()
-    .isFloat({ min: 0 }),
+  // .isDate()
 
-  // Location
+  // Detail Transportation
   body(
-    "location.loadingLocation",
-    "Loading location must be a non-empty string",
+    "detailTransportation.demurrage",
+    "Демередж должен быть строкой и не может быть пустым",
   )
     .isString()
     .notEmpty(),
   body(
-    "location.loadingLocationDate",
-    "Loading location date must be a valid ISO date",
-  )
-    .optional()
-    .isString(),
-
-  body(
-    "location.unloadingLocation",
-    "Unloading location must be a non-empty string",
+    "detailTransportation.allowedShortage",
+    "Допустимая недостача должна быть строкой и не может быть пустым значением",
   )
     .isString()
     .notEmpty(),
-  body("location.distance", "Distance must be a positive number").isFloat({
-    min: 0,
-  }),
+  body(
+    "detailTransportation.paymentType",
+    "Тип оплаты должен быть одним из: 'cash', 'nds', 'without_nds'",
+  )
+    .isString()
+    .isIn(["cash", "nds", "without_nds"]),
+  body(
+    "detailTransportation.ratePerTon",
+    "Тариф за тонну должен быть строкой и не может быть пустым",
+  )
+    .isString()
+    .notEmpty(),
+  body(
+    "detailTransportation.paymentDeadline",
+    "Срок оплаты должен быть строкой и не может быть пустым",
+  )
+    .isString()
+    .notEmpty(),
 
-  // Terms
-  body("terms.price", "Price must be a positive number").isFloat({ min: 0 }),
-  body("terms.paymentMethod", "Invalid payment method")
-    .isString()
-    .isIn(["NDS", "without_NDS", "cash"]),
+  // Additional Conditions
   body(
-    "terms.advance.percentage",
-    "Advance percentage must be between 0 and 100",
-  )
-    .optional()
-    .isFloat({ min: 0, max: 100 }),
-  body(
-    "terms.advance.period",
-    "Advance period must be either 'loading' or 'un_loading'",
-  )
-    .optional()
-    .isString()
-    .isIn(["loading", "un_loading"]),
-  body("terms.loadingType", "Invalid loading type")
-    .isString()
-    .isIn(["normal", "full"]),
-
-  // Required Transport
-  body("requiredTransport.carType", "Car type must be an array of valid values")
-    .isString()
-
-    .isIn(["Самосвал", "Танар", "Полу_прицеп", "Сцепка", "Любые_машины"]),
-  body(
-    "requiredTransport.carTypeUnLoading",
-    "Car type unloading must be an array of valid values",
+    "additionalConditions.additionalInformation",
+    "Дополнительная информация должна быть строкой и не может быть пустой",
   )
     .isString()
-    .isIn([
-      "Боковая",
-      "Задняя",
-      "На_правый_бок",
-      "На_левый_бок",
-      "Задняя_самосвальная",
-      "Боковая_самосвальная",
-      "Любая",
-    ]),
+    .notEmpty(),
   body(
-    "requiredTransport.carHeightLimit",
-    "Car height limit must be a positive number",
-  )
-    .optional()
-    .isFloat({ min: 0 }),
+    "additionalConditions.contacts",
+    "Контакты должны быть массивом объектов",
+  ).isArray(),
   body(
-    "requiredTransport.carUsage.count",
-    "Car usage count must be a positive number",
+    "additionalConditions.contacts.*.name",
+    "Имя контакта должно быть строкой и не может быть пустым",
   )
-    .optional()
-    .isFloat({ min: 0 }),
+    .isString()
+    .notEmpty(),
   body(
-    "requiredTransport.carUsage.carPeriod",
-    "Car usage period must be an array of valid values",
+    "additionalConditions.contacts.*.phone",
+    "Телефон контакта должен быть строкой и не может быть пустым",
   )
-    .optional()
-    .isIn(["Каждый_день", "Общее"]),
-
-  // Additional Info
-  body("additionalInfo", "Additional info must be a string")
-    .optional()
-    .isString(),
+    .isString()
+    .notEmpty(),
 ];

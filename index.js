@@ -47,9 +47,9 @@ app.patch(
 app.get("/auth/me", check.isAuth, authPublicSite.getMe);
 
 // booking
-// app.post("/booking", check.isManager, bookingValidator, booking.create);
+app.post("/booking", check.isAuth, bookingValidator, booking.create);
 // app.put("/booking/:id", check.isManager, bookingValidator, booking.toggle);
-// app.get("/booking", booking.getAll);
+app.get("/booking", booking.getAll);
 // app.get("/booking/:id", booking.getOne);
 // app.delete("/booking/:id", check.isManager, booking.remove);
 // proposalsDevelopment
