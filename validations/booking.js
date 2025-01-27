@@ -8,6 +8,7 @@ export const bookingValidator = [
   )
     .isString()
     .notEmpty(),
+
   body(
     "basicInfo.loadingLocation.name",
     "Название места погрузки должно быть строкой и не может быть пустым",
@@ -33,9 +34,10 @@ export const bookingValidator = [
   )
     .isString()
     .notEmpty(),
-  body("basicInfo.tonnage", "Тоннаж должен быть строкой и не может быть пустым")
-    .isString()
-    .notEmpty(),
+  body(
+    "basicInfo.tonnage",
+    "Тоннаж должен быть строкой и не может быть пустым",
+  ).optional(),
   body(
     "basicInfo.culture",
     "Культура должна быть строкой и не может быть пустым значением",
@@ -47,15 +49,11 @@ export const bookingValidator = [
   body(
     "conditionsTransportation.loadingMethod",
     "Метод погрузки должен быть строкой и не может быть пустым",
-  )
-    .isString()
-    .notEmpty(),
+  ).optional(),
   body(
     "conditionsTransportation.scaleCapacity",
     "Вместимость весов должна быть строкой и не может быть пустой",
-  )
-    .isString()
-    .notEmpty(),
+  ).optional(),
   body(
     "conditionsTransportation.loadingDate",
     "Дата погрузки должна быть действительной датой",
@@ -66,15 +64,11 @@ export const bookingValidator = [
   body(
     "detailTransportation.demurrage",
     "Демередж должен быть строкой и не может быть пустым",
-  )
-    .isString()
-    .notEmpty(),
+  ).optional(),
   body(
     "detailTransportation.allowedShortage",
     "Допустимая недостача должна быть строкой и не может быть пустым значением",
-  )
-    .isString()
-    .notEmpty(),
+  ).optional(),
   body(
     "detailTransportation.paymentType",
     "Тип оплаты должен быть одним из: 'cash', 'nds', 'without_nds'",
@@ -90,17 +84,13 @@ export const bookingValidator = [
   body(
     "detailTransportation.paymentDeadline",
     "Срок оплаты должен быть строкой и не может быть пустым",
-  )
-    .isString()
-    .notEmpty(),
+  ).optional(),
 
   // Additional Conditions
   body(
     "additionalConditions.additionalInformation",
     "Дополнительная информация должна быть строкой и не может быть пустой",
-  )
-    .isString()
-    .notEmpty(),
+  ).optional(),
   body(
     "additionalConditions.contacts",
     "Контакты должны быть массивом объектов",

@@ -15,8 +15,7 @@ export const booking = {
           distance: req.body.basicInfo?.distance,
           loadingLocation: {
             name: req.body.basicInfo?.loadingLocation?.name,
-            coordinates:
-              req.body.basicInfo?.loadingLocation?.coordinates || null,
+            coordinates: req.body.basicInfo?.loadingLocation?.coordinates,
           },
           unLoadingLocation: req.body.basicInfo?.unLoadingLocation,
           tonnage: req.body.basicInfo?.tonnage,
@@ -52,9 +51,17 @@ export const booking = {
 
   getAll: async (req, res) => {
     try {
-      const bookings = await BookingModel.find();
-      // .populate("user").exec();
-      // или ["", ""]
+      const bookings = await BookingModel.find().populate("user").exec();
+
+      // После этого, заполняем поле user.companyPublicData
+      const populatedBookings = await Promise.all(
+        bookings.map(async (booking) => {
+          if (booking.user && booking.user.companyPublicData) {
+            await booking.populate("user.companyPublicData");
+          }
+          return booking;
+        }),
+      );
       res.json(bookings);
     } catch (err) {
       console.log(err);

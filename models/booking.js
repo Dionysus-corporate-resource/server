@@ -24,27 +24,27 @@ export const BookingSchema = new mongoose.Schema(
         },
       },
       unLoadingLocation: { type: String, required: true },
-      tonnage: { type: String, required: true },
+      tonnage: { type: String, default: null },
       culture: { type: String, required: true },
     },
     conditionsTransportation: {
-      loadingMethod: { type: String, required: true },
-      scaleCapacity: { type: String, required: true },
+      loadingMethod: { type: String, default: null },
+      scaleCapacity: { type: String, default: null },
       loadingDate: { type: Date, required: true },
     },
     detailTransportation: {
-      demurrage: { type: String, required: true },
-      allowedShortage: { type: String, required: true },
+      demurrage: { type: String, default: null },
+      allowedShortage: { type: String, default: null },
       paymentType: {
         type: String,
         required: true,
         enum: ["cash", "nds", "without_nds"],
       },
       ratePerTon: { type: String, required: true },
-      paymentDeadline: { type: String, required: true },
+      paymentDeadline: { type: String, default: null },
     },
     additionalConditions: {
-      additionalInformation: { type: String, required: true },
+      additionalInformation: { type: String, default: null },
       contacts: [
         {
           name: { type: String, required: true },

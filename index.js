@@ -47,7 +47,8 @@ app.patch(
 app.get("/auth/me", check.isAuth, authPublicSite.getMe);
 
 // booking
-app.post("/booking", check.isAuth, bookingValidator, booking.create);
+// bookingValidator
+app.post("/booking", check.isAuth, booking.create);
 // app.put("/booking/:id", check.isManager, bookingValidator, booking.toggle);
 app.get("/booking", booking.getAll);
 // app.get("/booking/:id", booking.getOne);
