@@ -52,7 +52,7 @@ app.post("/booking", check.isAuth, booking.create);
 app.put("/booking/:id", check.isAuth, booking.update);
 app.get("/booking", booking.getAll);
 app.get("/booking/:id", booking.getOne);
-// app.delete("/booking/:id", check.isManager, booking.remove);
+app.delete("/booking/:id", check.isAuth, booking.remove);
 // proposalsDevelopment
 // app.get("/proposals-development", check.isAuth, proposalsDevelopment.getAll);
 // app.post(
