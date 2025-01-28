@@ -75,14 +75,25 @@ export const booking = {
         .populate("user")
         .exec();
 
+      if (!booking) {
+        return res.status(404).json({ message: "Бронирование не найдено" });
+      }
+
+      // Увеличиваем свойство `view` на 1
+      booking.view += 1;
+
+      // Сохраняем изменения в базе данных
+      await booking.save();
+
       // Если у пользователя есть companyPublicData, заполняем его
       if (booking.user && booking.user.companyPublicData) {
         await booking.populate({
           path: "user.companyPublicData", // Указываем путь
-          model: "CompanyPublic", // Указываем модель (замените на вашу)
+          model: "CompanyPublic", // Указываем модель
         });
       }
 
+      // Возвращаем обновлённый объект
       res.json(booking);
     } catch (err) {
       console.log(err);

@@ -57,6 +57,7 @@ export const BookingSchema = new mongoose.Schema(
       ref: "Logistician",
       required: true,
     },
+    view: { type: Number, default: 0 },
   },
   { timestamps: true },
 );
