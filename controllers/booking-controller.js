@@ -70,15 +70,20 @@ export const booking = {
   },
   getOne: async (req, res) => {
     try {
-      const bookings = await BookingModel.findById(req.params.id)
+      // Находим бронирование и заполняем поле `user`
+      const booking = await BookingModel.findById(req.params.id)
         .populate("user")
         .exec();
 
-      // После этого, заполняем поле user.companyPublicData
+      // Если у пользователя есть companyPublicData, заполняем его
       if (booking.user && booking.user.companyPublicData) {
-        await booking.populate("user.companyPublicData");
+        await booking.populate({
+          path: "user.companyPublicData", // Указываем путь
+          model: "CompanyPublic", // Указываем модель (замените на вашу)
+        });
       }
-      res.json(bookings);
+
+      res.json(booking);
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Не удалось получить booking" });
