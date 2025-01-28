@@ -70,12 +70,15 @@ export const booking = {
   },
   getOne: async (req, res) => {
     try {
-      const bookingId = req.params.id;
-      const booking = await BookingModel.findById(bookingId)
-        .populate("manager")
+      const bookings = await BookingModel.findById(req.params.id)
+        .populate("user")
         .exec();
-      // или ["", ""]
-      res.json(booking);
+
+      // После этого, заполняем поле user.companyPublicData
+      if (booking.user && booking.user.companyPublicData) {
+        await booking.populate("user.companyPublicData");
+      }
+      res.json(bookings);
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Не удалось получить booking" });
