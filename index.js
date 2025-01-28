@@ -49,14 +49,14 @@ app.get("/auth/me", check.isAuth, authPublicSite.getMe);
 // booking
 // bookingValidator
 app.post("/booking", check.isAuth, booking.create);
-// app.put("/booking/:id", check.isManager, bookingValidator, booking.toggle);
+app.put("/booking/:id", check.isAuth, booking.update);
 app.get("/booking", booking.getAll);
 app.get("/booking/:id", booking.getOne);
 // app.delete("/booking/:id", check.isManager, booking.remove);
 // proposalsDevelopment
 // app.get("/proposals-development", check.isAuth, proposalsDevelopment.getAll);
 // app.post(
-//   "/proposals-development",
+//   "/proposals-development",J
 //   check.isAuth,
 //   proposalsDevelopmentValidator,
 //   proposalsDevelopment.create,
