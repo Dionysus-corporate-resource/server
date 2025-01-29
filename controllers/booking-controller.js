@@ -159,6 +159,36 @@ export const booking = {
       res.status(500).json({ message: "Ошибка при обновлении заявки" });
     }
   },
+  updateStatus: async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json(errors.array());
+    }
+
+    try {
+      const bookingId = req.params.id;
+
+      // Проверяем, существует ли документ
+      const existingBooking = await BookingModel.findById(bookingId);
+      if (!existingBooking) {
+        return res.status(404).json({ message: "Заявка не найдена" });
+      }
+
+      // Обновляем документ
+      const updatedBooking = await BookingModel.findByIdAndUpdate(
+        bookingId,
+        {
+          status: req.body.status || "active", // можно задать значение по умолчанию
+        },
+        { new: true }, // возвращает обновленный объект
+      );
+
+      res.json(updatedBooking);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Ошибка при обновлении заявки" });
+    }
+  },
   remove: async (req, res) => {
     try {
       const bookingId = req.params.id;
