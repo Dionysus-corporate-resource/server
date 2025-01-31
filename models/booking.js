@@ -57,6 +57,11 @@ export const BookingSchema = new mongoose.Schema(
       ref: "Logistician",
       required: true,
     },
+    companyPublicData: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CompanyPublic",
+      require: true,
+    },
     view: { type: Number, default: 0 },
   },
   { timestamps: true },

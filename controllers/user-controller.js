@@ -35,6 +35,11 @@ export const authPublicSite = {
           passwordHash: hash,
           phone: req.body.phone,
           roles: "driver",
+          activeSubscriptions: {
+            purchasedBooking: { remainingBookings: 0 },
+            unLimitedBookingSubscription: { isPurchased: false },
+            showContactSubscription: { isPurchased: false },
+          },
         });
         const userDriver = await doc.save();
 
@@ -67,6 +72,11 @@ export const authPublicSite = {
           phone: req.body.phone,
           roles: "customer",
           companyPublicData: isExistCompany._id,
+          activeSubscriptions: {
+            purchasedBooking: { remainingBookings: 0 },
+            unLimitedBookingSubscription: { isPurchased: false },
+            showContactSubscription: { isPurchased: false },
+          },
         });
         const savedUserCustomer = await docLogistician.save();
 
@@ -101,6 +111,11 @@ export const authPublicSite = {
         phone: req.body.phone,
         roles: "customer",
         companyPublicData: savedCompanyPublic._id,
+        activeSubscriptions: {
+          purchasedBooking: { remainingBookings: 0 },
+          unLimitedBookingSubscription: { isPurchased: false },
+          showContactSubscription: { isPurchased: false },
+        },
       });
       const savedUserCustomer = await docLogistician.save();
 

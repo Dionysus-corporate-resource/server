@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import { BookingModel } from "../models/booking.js";
+import Logistician from "../models/logistician.js";
 
 export const booking = {
   create: async (req, res) => {
@@ -9,6 +10,17 @@ export const booking = {
     }
 
     try {
+      const userId = req.userId;
+      const user = await Logistician.findById(userId)
+        .populate("companyPublicData")
+        .exec();
+
+      if (!user.companyPublicData) {
+        return res
+          .status(400)
+          .json({ message: "Не вышло прочитать данные компании" });
+      }
+
       const doc = new BookingModel({
         status: req.body.status || "active", // можно задать значение по умолчанию
         basicInfo: {
@@ -39,7 +51,22 @@ export const booking = {
           contacts: req.body.additionalConditions?.contacts || [],
         },
         user: req.userId, // Используем ID текущего пользователя
+        companyPublicData: user.companyPublicData._id,
       });
+
+      const updatedUser = await Logistician.findByIdAndUpdate(
+        userId,
+        {
+          $inc: {
+            "activeSubscriptions.purchasedBooking.remainingBookings": -1,
+          },
+        },
+        { new: true }, // Возвращает обновленный документ
+      );
+
+      if (!updatedUser) {
+        return res.status(400).json({ message: "Пользователь не найден" });
+      }
 
       const booking = await doc.save();
       res.json(booking);
@@ -51,17 +78,20 @@ export const booking = {
 
   getAll: async (req, res) => {
     try {
-      const bookings = await BookingModel.find().populate("user").exec();
+      const bookings = await BookingModel.find()
+        .populate("user")
+        .populate("companyPublicData")
+        .exec();
 
       // После этого, заполняем поле user.companyPublicData
-      const populatedBookings = await Promise.all(
-        bookings.map(async (booking) => {
-          if (booking.user && booking.user.companyPublicData) {
-            await booking.populate("user.companyPublicData");
-          }
-          return booking;
-        }),
-      );
+      // const populatedBookings = await Promise.all(
+      //   bookings.map(async (booking) => {
+      //     if (booking.user && booking.user.companyPublicData) {
+      //       await booking.populate("user.companyPublicData");
+      //     }
+      //     return booking;
+      //   }),
+      // );
       res.json(bookings);
     } catch (err) {
       console.log(err);
@@ -73,6 +103,7 @@ export const booking = {
       // Находим бронирование и заполняем поле `user`
       const booking = await BookingModel.findById(req.params.id)
         .populate("user")
+        .populate("companyPublicData")
         .exec();
 
       if (!booking) {
@@ -86,12 +117,12 @@ export const booking = {
       await booking.save();
 
       // Если у пользователя есть companyPublicData, заполняем его
-      if (booking.user && booking.user.companyPublicData) {
-        await booking.populate({
-          path: "user.companyPublicData", // Указываем путь
-          model: "CompanyPublic", // Указываем модель
-        });
-      }
+      // if (booking.user && booking.user.companyPublicData) {
+      //   await booking.populate({
+      //     path: "user.companyPublicData",
+      //     model: "CompanyPublic",
+      //   });
+      // }
 
       // Возвращаем обновлённый объект
       res.json(booking);
@@ -109,6 +140,16 @@ export const booking = {
 
     try {
       const bookingId = req.params.id;
+
+      const userId = req.userId;
+      const user = await Logistician.findById(userId)
+        .populate("companyPublicData")
+        .exec();
+      if (!user.companyPublicData) {
+        return res
+          .status(400)
+          .json({ message: "Не вышло прочитать данные компании" });
+      }
 
       // Проверяем, существует ли документ
       const existingBooking = await BookingModel.findById(bookingId);
@@ -149,6 +190,7 @@ export const booking = {
             contacts: req.body.additionalConditions?.contacts || [],
           },
           // user: req.userId,
+          companyPublicData: user.companyPublicData._id,
         },
         { new: true }, // возвращает обновленный объект
       );
