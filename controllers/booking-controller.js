@@ -21,8 +21,17 @@ export const booking = {
           .json({ message: "Не вышло прочитать данные компании" });
       }
 
+      // Проверяем, если у пользователя нет доступных заявок и нет подписки на безлимит
+      if (
+        user.activeSubscriptions.purchasedBooking.remainingBookings <= 0 &&
+        !user.activeSubscriptions.unLimitedBookingSubscription.isPurchased
+      ) {
+        return res.status(400).json({ message: "Нет доступных заявок" });
+      }
+
+      // Создаем заявку
       const doc = new BookingModel({
-        status: req.body.status || "active", // можно задать значение по умолчанию
+        status: req.body.status || "active",
         basicInfo: {
           distance: req.body.basicInfo?.distance,
           loadingLocation: {
@@ -50,10 +59,19 @@ export const booking = {
             req.body.additionalConditions?.additionalInformation,
           contacts: req.body.additionalConditions?.contacts || [],
         },
-        user: req.userId, // Используем ID текущего пользователя
+        user: req.userId,
         companyPublicData: user.companyPublicData._id,
       });
 
+      // Сохраняем заявку
+      const booking = await doc.save();
+
+      // Если у него безлимит, не отнимает заявки, даже если есть, просто выходим
+      if (user.activeSubscriptions.unLimitedBookingSubscription.isPurchased) {
+        return res.status(200).json({ message: "Заявка создана" });
+      }
+
+      // Уменьшаем remainingBookings только после успешного сохранения заявки
       const updatedUser = await Logistician.findByIdAndUpdate(
         userId,
         {
@@ -68,7 +86,6 @@ export const booking = {
         return res.status(400).json({ message: "Пользователь не найден" });
       }
 
-      const booking = await doc.save();
       res.json(booking);
     } catch (err) {
       console.log(err);

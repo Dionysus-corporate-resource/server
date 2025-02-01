@@ -77,10 +77,10 @@ app.post(
         capture: true,
         confirmation: {
           type: "redirect",
-          return_url: `http://localhost:5173/payment-success`,
-          cancel_url: `http://localhost:5173/payment-failed`,
+          return_url: `https://gruzrynok.ru/payment-success`,
+          cancel_url: `https://gruzrynok.ru/payment-failed`,
         },
-        description: `Покупка заявок в количестве #${countBooking} шт.`,
+        description: `Вы покпаете заявки`,
         metadata: {
           userId,
           countBooking,
@@ -130,7 +130,6 @@ app.post(
             }
           }
           default:
-            return 100;
         }
       };
       const userId = req.userId;
@@ -146,10 +145,10 @@ app.post(
         capture: true,
         confirmation: {
           type: "redirect",
-          return_url: `http://localhost:5173/payment-success`,
-          cancel_url: `http://localhost:5173/payment-failed`,
+          return_url: `https://gruzrynok.ru/payment-success`,
+          cancel_url: `https://gruzrynok.ru/payment-failed`,
         },
-        description: `Вы покупаете #${typeSubscriprion}`,
+        description: `Покупка безлимитной подписки`,
         metadata: {
           countBooking: null,
           countMonthSubscribe,
@@ -240,6 +239,42 @@ app.post("/api/payment-webhook", async (req, res) => {
         );
       } else if (typeSubscriprion === "unLimited") {
         console.log("Обработка unLimitBooking");
+        // если пользователь уже покупал подписку будем плючовать время
+        // Для этого нужна функция, которая проверит, если есть время
+        const calculateRemainingSubscriptionTime = (subscription) => {
+          if (
+            !subscription?.isPurchased ||
+            !subscription.expiresAt ||
+            !subscription.purchasedAt
+          ) {
+            return 0;
+          }
+
+          const now = Date.now();
+          const expiresAt = new Date(subscription.expiresAt).getTime();
+          const purchasedAt = new Date(subscription.purchasedAt).getTime();
+
+          // Если подписка еще не началась (now < purchasedAt)
+          if (now < purchasedAt) {
+            // const totalDuration = expiresAt - purchasedAt;
+            return Math.ceil((expiresAt - purchasedAt) / (1000 * 60 * 60 * 24));
+          }
+
+          // Если подписка уже началась
+          const totalDuration = expiresAt - purchasedAt;
+          const timePassed = now - purchasedAt;
+
+          const remainingMilliseconds = expiresAt - now;
+          const remainingDays = Math.ceil(
+            remainingMilliseconds / (1000 * 60 * 60 * 24),
+          );
+
+          return remainingDays;
+        };
+        const user = await Logistician.findById(userId);
+        const remainingDays = calculateRemainingSubscriptionTime(
+          user.activeSubscriptions.unLimitedBookingSubscription,
+        );
         await Logistician.findByIdAndUpdate(
           userId,
           {
@@ -247,7 +282,9 @@ app.post("/api/payment-webhook", async (req, res) => {
               "activeSubscriptions.unLimitedBookingSubscription": {
                 isPurchased: true,
                 purchasedAt: new Date(),
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 дней
+                expiresAt: new Date(
+                  Date.now() + (30 + remainingDays) * 24 * 60 * 60 * 1000,
+                ), // +30 дней
               },
             },
           },
@@ -270,6 +307,13 @@ app.post("/api/payment-webhook", async (req, res) => {
           const expiresAt = new Date(subscription.expiresAt).getTime();
           const purchasedAt = new Date(subscription.purchasedAt).getTime();
 
+          // Если подписка еще не началась (now < purchasedAt)
+          if (now < purchasedAt) {
+            // const totalDuration = expiresAt - purchasedAt;
+            return Math.ceil((expiresAt - purchasedAt) / (1000 * 60 * 60 * 24));
+          }
+
+          // Если подписка уже началась
           const totalDuration = expiresAt - purchasedAt;
           const timePassed = now - purchasedAt;
 
@@ -313,7 +357,40 @@ app.post("/api/payment-webhook", async (req, res) => {
     });
   }
 });
+// проверка актуальности подписок
+// cron/subscriptions.ts
 
+export const checkExpiredSubscriptions = async () => {
+  const now = new Date();
+
+  // Обновляем подписки, которые истекли
+  await Logistician.updateMany(
+    {
+      $or: [
+        {
+          "activeSubscriptions.unLimitedBookingSubscription.isPurchased": true,
+          "activeSubscriptions.unLimitedBookingSubscription.expiresAt": {
+            $lt: now,
+          },
+        },
+        {
+          "activeSubscriptions.showContactSubscription.isPurchased": true,
+          "activeSubscriptions.showContactSubscription.expiresAt": { $lt: now },
+        },
+      ],
+    },
+    {
+      $set: {
+        "activeSubscriptions.unLimitedBookingSubscription.isPurchased": false,
+        "activeSubscriptions.unLimitedBookingSubscription.expiresAt": null,
+        "activeSubscriptions.showContactSubscription.isPurchased": false,
+        "activeSubscriptions.showContactSubscription.expiresAt": null,
+      },
+    },
+  );
+
+  console.log("Проверка подписок завершена:", new Date().toISOString());
+};
 // booking
 // bookingValidator
 app.post("/booking", check.isAuth, booking.create);
@@ -422,6 +499,12 @@ app.delete("/booking/:id", check.isAuth, booking.remove);
 // );
 
 // Запуск сервера
+// Запуск проверки подписок каждые 24 часа
+setInterval(checkExpiredSubscriptions, 24 * 60 * 60 * 1000);
+
+// Можно также запустить проверку сразу при старте приложения
+checkExpiredSubscriptions();
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
