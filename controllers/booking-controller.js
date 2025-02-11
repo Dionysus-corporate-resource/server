@@ -22,12 +22,12 @@ export const booking = {
       }
 
       // Проверяем, если у пользователя нет доступных заявок и нет подписки на безлимит
-      if (
-        user.activeSubscriptions.purchasedBooking.remainingBookings <= 0 &&
-        !user.activeSubscriptions.unLimitedBookingSubscription.isPurchased
-      ) {
-        return res.status(400).json({ message: "Нет доступных заявок" });
-      }
+      // if (
+      //   user.activeSubscriptions.purchasedBooking.remainingBookings <= 0 &&
+      //   !user.activeSubscriptions.unLimitedBookingSubscription.isPurchased
+      // ) {
+      //   return res.status(400).json({ message: "Нет доступных заявок" });
+      // }
 
       // Создаем заявку
       const doc = new BookingModel({
@@ -67,24 +67,24 @@ export const booking = {
       const booking = await doc.save();
 
       // Если у него безлимит, не отнимает заявки, даже если есть, просто выходим
-      if (user.activeSubscriptions.unLimitedBookingSubscription.isPurchased) {
-        return res.status(200).json({ message: "Заявка создана" });
-      }
+      // if (user.activeSubscriptions.unLimitedBookingSubscription.isPurchased) {
+      //   return res.status(200).json({ message: "Заявка создана" });
+      // }
 
       // Уменьшаем remainingBookings только после успешного сохранения заявки
-      const updatedUser = await Logistician.findByIdAndUpdate(
-        userId,
-        {
-          $inc: {
-            "activeSubscriptions.purchasedBooking.remainingBookings": -1,
-          },
-        },
-        { new: true }, // Возвращает обновленный документ
-      );
+      // const updatedUser = await Logistician.findByIdAndUpdate(
+      //   userId,
+      //   {
+      //     $inc: {
+      //       "activeSubscriptions.purchasedBooking.remainingBookings": -1,
+      //     },
+      //   },
+      //   { new: true }, // Возвращает обновленный документ
+      // );
 
-      if (!updatedUser) {
-        return res.status(400).json({ message: "Пользователь не найден" });
-      }
+      // if (!updatedUser) {
+      //   return res.status(400).json({ message: "Пользователь не найден" });
+      // }
 
       res.json(booking);
     } catch (err) {

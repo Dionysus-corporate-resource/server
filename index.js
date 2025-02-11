@@ -18,6 +18,7 @@ import { proposalsDevelopment } from "./controllers/proposals-development-contro
 import { proposalsDevelopmentValidator } from "./validations/proposals-development.js";
 import { company } from "./controllers/company-controller.js";
 import Logistician from "./models/logistician.js";
+import { BookingModel } from "./models/booking.js";
 
 // curl -X POST https://api.yookassa.ru/v3/webhooks \
 // -u 1023852:test_NqZIdGsCluEi5JcbU8QZU1mXkxJxLEACueQRJ7sOi80 \
@@ -359,6 +360,14 @@ app.post("/api/payment-webhook", async (req, res) => {
 });
 // проверка актуальности подписок
 // cron/subscriptions.ts
+// доцент кафедры информационной технологии
+
+const toggleBookingStatusInActive = async () => {
+  await BookingModel.updateMany(
+    { status: { $ne: "inactive" } },
+    { $set: { status: "inactive" } },
+  );
+};
 
 export const checkExpiredSubscriptions = async () => {
   const now = new Date();
@@ -501,9 +510,9 @@ app.delete("/booking/:id", check.isAuth, booking.remove);
 // Запуск сервера
 // Запуск проверки подписок каждые 24 часа
 setInterval(checkExpiredSubscriptions, 24 * 60 * 60 * 1000);
-
 // Можно также запустить проверку сразу при старте приложения
 checkExpiredSubscriptions();
+toggleBookingStatusInActive();
 
 const PORT = 3000;
 app.listen(PORT, () => {
