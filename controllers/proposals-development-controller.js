@@ -13,7 +13,7 @@ export const proposalsDevelopment = {
         name: req.body.name,
         description: req.body.description,
         topic: req.body.topic,
-        status: req.body.status,
+        status: "pending",
         user: req.userId,
       });
 
@@ -32,7 +32,7 @@ export const proposalsDevelopment = {
       res.json(proposalsDevelopment);
     } catch (err) {
       console.log(err);
-      res.status(500).json({ message: "Не удалось получить bookings" });
+      res.status(500).json({ message: "Не удалось получить предложения" });
     }
   },
 };

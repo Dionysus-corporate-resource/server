@@ -13,10 +13,10 @@ export const proposalsDevelopmentValidator = [
     .isIn(["bag", "proposals"]),
 
   // Валидация поля "status"
-  body(
-    "status",
-    "Invalid status, must be one of 'in_progress', 'pending', or 'done'",
-  )
-    .isString()
-    .isIn(["in_progress", "pending", "done"]),
+  // body(
+  //   "status",
+  //   "Invalid status, must be one of 'in_progress', 'pending', or 'done'",
+  // )
+  //   .isString()
+  //   .isIn(["in_progress", "pending", "done"]),
 ];

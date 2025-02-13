@@ -367,6 +367,7 @@ const toggleBookingStatusInActive = async () => {
     { status: { $ne: "inactive" } },
     { $set: { status: "inactive" } },
   );
+  console.log("Статус заявок изменен");
 };
 
 export const checkExpiredSubscriptions = async () => {
@@ -409,13 +410,13 @@ app.get("/booking", booking.getAll);
 app.get("/booking/:id", booking.getOne);
 app.delete("/booking/:id", check.isAuth, booking.remove);
 // proposalsDevelopment
-// app.get("/proposals-development", check.isAuth, proposalsDevelopment.getAll);
-// app.post(
-//   "/proposals-development",J
-//   check.isAuth,
-//   proposalsDevelopmentValidator,
-//   proposalsDevelopment.create,
-// );
+app.get("/proposals-development", proposalsDevelopment.getAll);
+app.post(
+  "/proposals-development",
+  check.isAuth,
+  proposalsDevelopmentValidator,
+  proposalsDevelopment.create,
+);
 // company
 // auth
 // app.post("/company/register", company.registerCompany);
@@ -510,9 +511,10 @@ app.delete("/booking/:id", check.isAuth, booking.remove);
 // Запуск сервера
 // Запуск проверки подписок каждые 24 часа
 setInterval(checkExpiredSubscriptions, 24 * 60 * 60 * 1000);
+setInterval(toggleBookingStatusInActive, 7 * 24 * 60 * 60 * 1000);
+
 // Можно также запустить проверку сразу при старте приложения
 checkExpiredSubscriptions();
-toggleBookingStatusInActive();
 
 const PORT = 3000;
 app.listen(PORT, () => {

@@ -12,11 +12,11 @@ const ProposalsDevelopmentSchema = new mongoose.Schema(
     status: {
       type: String,
       require: true,
-      enum: ["in_progress", "pending", "done"],
+      enum: ["in_progress", "pending", "done", "rejected"],
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Logistician",
       require: true,
     },
   },
