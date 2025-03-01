@@ -74,7 +74,15 @@ export const bookingValidator = [
     "Тип оплаты должен быть одним из: 'cash', 'nds', 'without_nds'",
   )
     .isString()
-    .isIn(["cash", "nds", "without_nds"]),
+    .isIn([
+      "cash",
+      "nds",
+      "without_nds",
+      "nds_20",
+      "nds_15",
+      "nds_10",
+      "nds_5",
+    ]),
   body(
     "detailTransportation.ratePerTon",
     "Тариф за тонну должен быть строкой и не может быть пустым",

@@ -38,7 +38,15 @@ export const BookingSchema = new mongoose.Schema(
       paymentType: {
         type: String,
         required: true,
-        enum: ["cash", "nds", "without_nds"],
+        enum: [
+          "cash",
+          "without_nds",
+          "nds",
+          "nds_20",
+          "nds_15",
+          "nds_10",
+          "nds_5",
+        ],
       },
       ratePerTon: { type: String, required: true },
       paymentDeadline: { type: String, default: null },
