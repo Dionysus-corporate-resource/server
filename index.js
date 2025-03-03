@@ -41,7 +41,52 @@ mongoose
   .connect(process.env.DATABASE_URL)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Error connecting to MongoDB", err));
+
 // Маршруты
+let lastRequestTime = 0;
+const apiKey = process.env.GEOCODE_API_KEY;
+const apiUrl = "https://api.opencagedata.com/geocode/v1/json";
+
+// Функция для задержки в 1 секунду между запросами
+const delayRequest = (delay) =>
+  new Promise((resolve) => setTimeout(resolve, delay));
+
+app.get("/geocode/:query", async (req, res) => {
+  // const { query } = req.query;
+  const query = req.params.query;
+
+  if (!query) {
+    return res.status(400).send("Query parameter is required");
+  }
+
+  const currentTime = Date.now();
+  const timeDiff = currentTime - lastRequestTime;
+
+  // Если время с последнего запроса меньше 1 секунды, то ждём оставшееся время
+  if (timeDiff < 1000) {
+    const delay = 1000 - timeDiff;
+    await delayRequest(delay); // Ждём оставшуюся часть секунды
+  }
+
+  lastRequestTime = Date.now(); // Обновляем время последнего запроса
+
+  try {
+    const response = await fetch(
+      `${apiUrl}?q=${query}&key=${apiKey}&language=ru&countrycode=ru`,
+    );
+
+    if (!response.ok) {
+      return res.status(500).send("Error fetching data");
+    }
+
+    const data = await response.json();
+    // console.log("запрос на гео");
+    res.json(data);
+  } catch (error) {
+    res.status(500).send("Error fetching data");
+  }
+});
+
 app.get("/", (req, res) => {
   res.send(
     "Привет, Roma! Это твой первый сервер на Express с модулями ES6!! New Version",
@@ -511,7 +556,7 @@ app.post(
 // Запуск сервера
 // Запуск проверки подписок каждые 24 часа
 setInterval(checkExpiredSubscriptions, 24 * 60 * 60 * 1000);
-setInterval(toggleBookingStatusInActive, 7 * 24 * 60 * 60 * 1000);
+// setInterval(toggleBookingStatusInActive, 7 * 24 * 60 * 60 * 1000);
 
 // Можно также запустить проверку сразу при старте приложения
 checkExpiredSubscriptions();
