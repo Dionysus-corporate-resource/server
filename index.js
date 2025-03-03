@@ -54,6 +54,7 @@ const delayRequest = (delay) =>
 app.get("/geocode/:query", async (req, res) => {
   // const { query } = req.query;
   const query = req.params.query;
+  const countryCodes = ["ru", "ua"]; // Россия и Украина
 
   if (!query) {
     return res.status(400).send("Query parameter is required");
@@ -63,25 +64,52 @@ app.get("/geocode/:query", async (req, res) => {
   const timeDiff = currentTime - lastRequestTime;
 
   // Если время с последнего запроса меньше 1 секунды, то ждём оставшееся время
-  if (timeDiff < 1000) {
-    const delay = 1000 - timeDiff;
+  if (timeDiff < 1500) {
+    const delay = 1500 - timeDiff;
     await delayRequest(delay); // Ждём оставшуюся часть секунды
   }
 
   lastRequestTime = Date.now(); // Обновляем время последнего запроса
 
   try {
-    const response = await fetch(
-      `${apiUrl}?q=${query}&key=${apiKey}&language=ru&countrycode=ru`,
+    // const response = await fetch(
+    //   `${apiUrl}?q=${query}&key=${apiKey}&language=ru&countrycode=ru`,
+    // );
+
+    // if (!response.ok) {
+    //   return res.status(500).send("Error fetching data");
+    // }
+
+    // const data = await responses.json();
+    // console.log("запрос на гео");
+    // res.json(data);
+
+    const responses = await Promise.allSettled(
+      countryCodes.map((code) =>
+        fetch(
+          `${apiUrl}?q=${query}&key=${apiKey}&language=ru&countrycode=${code}`,
+        ),
+      ),
     );
 
-    if (!response.ok) {
-      return res.status(500).send("Error fetching data");
+    // Проверяем, есть ли хотя бы один успешный запрос
+    const successfulResponses = responses
+      .filter((res) => res.status === "fulfilled" && res.value.ok)
+      .map((res) => res.value);
+
+    if (successfulResponses.length === 0) {
+      return res.status(500).json({ error: "All requests failed" });
     }
 
-    const data = await response.json();
-    // console.log("запрос на гео");
-    res.json(data);
+    // Преобразуем успешные запросы в JSON
+    const data = await Promise.all(
+      successfulResponses.map((res) => res.json()),
+    );
+
+    // Объединяем результаты
+    const mergedResults = data.flatMap((d) => d.results || []);
+    // console.log("Полученные данные - ", mergedResults);
+    res.json(mergedResults);
   } catch (error) {
     res.status(500).send("Error fetching data");
   }
@@ -561,7 +589,7 @@ setInterval(checkExpiredSubscriptions, 24 * 60 * 60 * 1000);
 // Можно также запустить проверку сразу при старте приложения
 checkExpiredSubscriptions();
 
-const PORT = 3000;
+const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
