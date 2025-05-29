@@ -2,6 +2,7 @@ import express from "express";
 import checkAuth from "../middlewares/auth.middleware.js";
 import User from "../models/user.model.js";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
 const router = express.Router();
 
