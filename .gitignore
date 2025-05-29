@@ -1,0 +1,11 @@
+.env                # Основной файл окружения
+.env.*              # Все вариации .env файлов (кроме .env.example)
+
+/node_modules       # Зависимости npm
+
+/dist               # Собранные файлы
+/build              #
+
+Dockerfile          # Уже есть у вас
+docker-compose.yml  # Часто содержит чувствительные данные
+.dockerignore       #
