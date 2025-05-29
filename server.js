@@ -16,8 +16,8 @@ app.use("/api/v1", routes);
 const startSever = async () => {
   try {
     await connectDB()
-      .then(() => console.log("MinIO buckets ready"))
-      .catch((err) => console.error("Failed to initialize MinIO:", err));
+      .then(() => console.log("Подключение закончено"))
+      .catch((err) => console.error("Ошибка подкючения", err));
 
     app.listen(PORT, () => {
       console.log(`✳️ Сервер запущен на http://localhost:${PORT}`);
