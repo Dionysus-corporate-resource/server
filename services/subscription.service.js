@@ -45,8 +45,7 @@ export const startSubscriptionCron = () => {
 
   // Затем каждые 24 часа
   // setInterval(checkExpiredSubscriptions, 24 * 60 * 60 * 1000);
-
-  schedule.scheduleJob("* * * * *", () => {
+  schedule.scheduleJob("0 */24 * * *", () => {
     checkExpiredSubscriptions();
   });
 };

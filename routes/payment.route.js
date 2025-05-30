@@ -61,7 +61,7 @@ router.post("/un-limit-booking", checkAuth, async (req, res) => {
     const gitFinalyPrice = (typeSubscriprion, countMonthSubscribe) => {
       switch (typeSubscriprion) {
         case "unLimited":
-          return 35;
+          return 3500;
         case "showContact": {
           if (countMonthSubscribe === 1) {
             return 100;
