@@ -25,7 +25,7 @@ router.post("/limit-booking", checkAuth, async (req, res) => {
         return_url: `https://gruzrynok.ru/payment-success`,
         cancel_url: `https://gruzrynok.ru/payment-failed`,
       },
-      description: `Вы покпаете заявки`,
+      description: `Покупка заявок в количестве ${countBooking} шт`,
       metadata: {
         userId,
         countBooking,
@@ -61,7 +61,7 @@ router.post("/un-limit-booking", checkAuth, async (req, res) => {
     const gitFinalyPrice = (typeSubscriprion, countMonthSubscribe) => {
       switch (typeSubscriprion) {
         case "unLimited":
-          return 3500;
+          return 2700;
         case "showContact": {
           if (countMonthSubscribe === 1) {
             return 100;
@@ -72,6 +72,7 @@ router.post("/un-limit-booking", checkAuth, async (req, res) => {
           }
         }
         default:
+          return 100;
       }
     };
     const userId = req.userId;
@@ -90,7 +91,7 @@ router.post("/un-limit-booking", checkAuth, async (req, res) => {
         return_url: `https://gruzrynok.ru/payment-success`,
         cancel_url: `https://gruzrynok.ru/payment-failed`,
       },
-      description: `Покупка безлимитной подписки`,
+      description: `Оформление безлимитной подписки`,
       metadata: {
         countBooking: null,
         countMonthSubscribe,
@@ -180,7 +181,7 @@ router.post("/webhook", async (req, res) => {
         );
       } else if (typeSubscriprion === "unLimited") {
         console.log("Обработка unLimitBooking");
-        // если пользователь уже покупал подписку будем плючовать время
+        // если пользователь уже покупал подписку будем плюсовать время
         // Для этого нужна функция, которая проверит, если есть время
         const calculateRemainingSubscriptionTime = (subscription) => {
           if (
@@ -212,6 +213,7 @@ router.post("/webhook", async (req, res) => {
 
           return remainingDays;
         };
+
         const user = await User.findById(userId);
         const remainingDays = calculateRemainingSubscriptionTime(
           user.activeSubscriptions.unLimitedBookingSubscription,

@@ -3,6 +3,8 @@ import express from "express";
 import dotenv from "dotenv";
 import routes from "./routes/index.js";
 import connectDB from "./config/db.config.js";
+// services
+import { checkExpiredSubscriptions } from "./services/subscription.service.js";
 
 dotenv.config();
 const app = express();
@@ -18,6 +20,9 @@ const startSever = async () => {
     await connectDB()
       .then(() => console.log("Подключение закончено"))
       .catch((err) => console.error("Ошибка подкючения", err));
+
+    // проверка подписок
+    checkExpiredSubscriptions();
 
     app.listen(PORT, () => {
       console.log(`✳️ Сервер запущен на http://localhost:${PORT}`);
