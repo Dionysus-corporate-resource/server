@@ -94,6 +94,18 @@ export const bookingControllers = {
       const body = req.body;
       const userId = req.userId;
 
+      const user = await User.findById(userId);
+
+      // Проверяем, если у пользователя нет доступных заявок и нет подписки на безлимит
+      if (
+        user.activeSubscriptions.purchasedBooking.remainingBookings <= 0 &&
+        !user.activeSubscriptions.unLimitedBookingSubscription.isPurchased
+      ) {
+        return res.status(400).json({
+          message: "У вас кончились заявки и нет безлимитной подписки",
+        });
+      }
+
       const docBooking = await Booking({
         status: "active",
         basicInfo: body.basicInfo,
@@ -102,6 +114,26 @@ export const bookingControllers = {
       });
 
       const saveBooking = await docBooking.save();
+
+      // Если у него безлимит, не отнимаем заявки, даже если есть, просто выходим
+      if (user.activeSubscriptions.unLimitedBookingSubscription.isPurchased) {
+        return res.status(200).json({ message: "Заявка создана" });
+      }
+
+      // Уменьшаем remainingBookings только после успешного сохранения заявки
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+          $inc: {
+            "activeSubscriptions.purchasedBooking.remainingBookings": -1,
+          },
+        },
+        { new: true },
+      );
+
+      if (!updatedUser) {
+        return res.status(400).json({ message: "Пользователь не найден" });
+      }
 
       res
         .status(200)

@@ -9,7 +9,6 @@ const connectDB = async () => {
       .connect(process.env.MONGO_URI)
       .then(() => console.log("✳️ Подключение к MongoDB прошло успешно"))
       .catch((err) => console.error("Error connecting to MongoDB", err));
-    console.log("✳️ Подключение к MongoDB прошло успешно");
   } catch {
     console.error("Error connecting to MongoDB", err);
     process.exit(1);

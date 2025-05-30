@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import routes from "./routes/index.js";
 import connectDB from "./config/db.config.js";
 // services
-import { checkExpiredSubscriptions } from "./services/subscription.service.js";
+import { startSubscriptionCron } from "./services/subscription.service.js";
 
 dotenv.config();
 const app = express();
@@ -22,7 +22,7 @@ const startSever = async () => {
       .catch((err) => console.error("Ошибка подкючения", err));
 
     // проверка подписок
-    checkExpiredSubscriptions();
+    startSubscriptionCron();
 
     app.listen(PORT, () => {
       console.log(`✳️ Сервер запущен на http://localhost:${PORT}`);
